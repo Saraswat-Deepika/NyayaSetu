@@ -7,7 +7,60 @@ const documentSchema = new mongoose.Schema({
     originalName: { type: String, required: true },
     fileType: { type: String, required: true },
     extractedText: { type: String },
-    aiSummary: { type: String },
+    
+    // AI Structured Data
+    structuredData: {
+        documentType: String,
+        partiesInvolved: [String],
+        courtName: String,
+        caseNumber: String,
+        judgeName: String,
+        filingDate: String,
+        relevantSections: [String],
+        petitioner: String,
+        respondent: String,
+        legalKeywords: [String]
+    },
+    
+    // Section-Wise AI Summary
+    aiSummary: {
+        documentOverview: String,
+        partiesInvolved: String,
+        factsOfCase: String,
+        legalIssues: String,
+        decisionOutcome: String,
+        keyTakeaways: [String]
+    },
+    
+    // Simple Language Explanations
+    simpleLanguageSummary: { type: String },
+    
+    // Legal Risk Detection
+    riskAnalysis: [{
+        issue: String,
+        severity: { type: String, enum: ['Green', 'Yellow', 'Red'] },
+        description: String
+    }],
+    
+    // Timeline Generator
+    timeline: [{
+        date: String,
+        event: String
+    }],
+    
+    // Confidence Metrics
+    confidenceScores: {
+        ocrAccuracy: Number,
+        summaryConfidence: Number,
+        entityExtractionConfidence: Number
+    },
+    
+    // Multi-Language Support
+    translatedSummaries: {
+        type: Map,
+        of: mongoose.Schema.Types.Mixed // Will store the same structure as aiSummary + simpleLanguageSummary for a specific language
+    },
+    
     uploadPath: { type: String, required: true }
 }, { timestamps: true });
 
