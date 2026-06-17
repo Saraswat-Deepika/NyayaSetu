@@ -7,12 +7,22 @@ const handleVoiceUpload = async (req, res) => {
             return res.status(400).json({ error: 'No audio file uploaded' });
         }
 
+        let history = [];
+        if (req.body.history) {
+            try {
+                history = JSON.parse(req.body.history);
+            } catch (e) {
+                console.error("Failed to parse history from request body:", e);
+            }
+        }
+
+        const language = req.body.language || 'English';
+
         // Call whisperService to transcribe
-        const transcript = await transcribeAudio(req.file.path);
+        const transcript = await transcribeAudio(req.file.path, language);
 
         // Call geminiService for legal guidance on transcript
-        const language = req.body.language || 'English';
-        const legalResponse = await getLegalGuidance(transcript, language);
+        const legalResponse = await getLegalGuidance(transcript, history, language);
 
         // Return both transcript and legal response as JSON
         res.json({

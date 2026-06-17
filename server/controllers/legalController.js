@@ -4,7 +4,7 @@ const Case = require('../models/Case');
 const askLegalQuestion = async (req, res) => {
     try {
         // Accept both 'question' (from frontend) and 'query' (legacy)
-        const { question, query, language, category, title } = req.body;
+        const { question, query, history, language, category, title } = req.body;
         const userQuery = question || query;
         
         if (!userQuery) {
@@ -12,7 +12,7 @@ const askLegalQuestion = async (req, res) => {
         }
 
         // Get AI response from Gemini
-        const guidance = await getLegalGuidance(userQuery, language);
+        const guidance = await getLegalGuidance(userQuery, history, language);
 
         // Save response to Case model
         const newCase = new Case({

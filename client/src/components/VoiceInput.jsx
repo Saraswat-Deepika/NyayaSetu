@@ -1,29 +1,59 @@
 import React, { useState, useRef } from 'react';
 import api from '../services/api';
 
-const VoiceInput = ({ caseId, onUploadSuccess }) => {
+const VoiceInput = ({ caseId, history, language, onUploadSuccess, onUploadStart, onUploadError }) => {
     const [isRecording, setIsRecording] = useState(false);
-    const [audioBlob, setAudioBlob] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
 
     const startRecording = async () => {
         try {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                alert(
+                    "Microphone access is not supported in this browser context.\n\n" +
+                    "This usually happens if the site is not loaded over a secure origin (HTTPS) or localhost.\n" +
+                    "Please ensure you are accessing the app via http://localhost:5173/ or https."
+                );
+                return;
+            }
+
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorderRef.current = new MediaRecorder(stream);
+            
+            let mimeType = '';
+            const options = {};
+            if (MediaRecorder.isTypeSupported('audio/webm')) {
+                mimeType = 'audio/webm';
+                options.mimeType = 'audio/webm';
+            } else if (MediaRecorder.isTypeSupported('audio/ogg')) {
+                mimeType = 'audio/ogg';
+                options.mimeType = 'audio/ogg';
+            } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+                mimeType = 'audio/mp4';
+                options.mimeType = 'audio/mp4';
+            } else if (MediaRecorder.isTypeSupported('audio/wav')) {
+                mimeType = 'audio/wav';
+                options.mimeType = 'audio/wav';
+            }
+
+            mediaRecorderRef.current = new MediaRecorder(stream, options);
             
             mediaRecorderRef.current.ondataavailable = (event) => {
                 if (event.data.size > 0) audioChunksRef.current.push(event.data);
             };
 
-            mediaRecorderRef.current.onstop = () => {
-                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-                setAudioBlob(audioBlob);
+            mediaRecorderRef.current.onstop = async () => {
+                const recordedType = mediaRecorderRef.current.mimeType || mimeType || 'audio/webm';
+                const audioBlob = new Blob(audioChunksRef.current, { type: recordedType });
+                console.log("Audio Captured", { size: audioBlob.size, type: audioBlob.type });
                 audioChunksRef.current = [];
+                
+                // Trigger auto upload immediately on stop
+                await uploadAudio(audioBlob);
             };
 
             mediaRecorderRef.current.start();
+            console.log("Recording Started");
             setIsRecording(true);
         } catch (error) {
             console.error("Error accessing microphone:", error);
@@ -46,95 +76,90 @@ const VoiceInput = ({ caseId, onUploadSuccess }) => {
     const stopRecording = () => {
         mediaRecorderRef.current?.stop();
         setIsRecording(false);
+        if (mediaRecorderRef.current && mediaRecorderRef.current.stream) {
+            mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+        }
     };
 
-    const handleUpload = async () => {
-        if (!audioBlob) return;
+    const uploadAudio = async (blob) => {
+        if (!blob) return;
         setIsUploading(true);
+        if (onUploadStart) onUploadStart();
+        
+        const mime = blob.type.toLowerCase();
+        let ext = 'webm';
+        if (mime.includes('wav')) ext = 'wav';
+        else if (mime.includes('ogg')) ext = 'ogg';
+        else if (mime.includes('mp4') || mime.includes('m4a')) ext = 'mp4';
+        else if (mime.includes('mpeg') || mime.includes('mp3')) ext = 'mp3';
+
         const formData = new FormData();
-        formData.append('audio', audioBlob, 'recording.wav');
+        formData.append('audio', blob, `recording.${ext}`);
         if (caseId) formData.append('caseId', caseId);
+        if (history) formData.append('history', JSON.stringify(history));
+        if (language) formData.append('language', language);
 
         try {
-            // Using the api instance directly with the correct endpoint
             const { data } = await api.post('/voice/transcribe', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            
-            setAudioBlob(null);
-            if (onUploadSuccess) onUploadSuccess(data.transcription);
+            console.log("Audio Uploaded & Processed Successfully", data);
+            if (onUploadSuccess) onUploadSuccess(data.transcription, data.legalResponse);
         } catch (error) {
             console.error("Voice upload failed:", error);
-            alert("Failed to transcribe audio. Please ensure Python server is running.");
+            if (onUploadError) onUploadError(error);
+            
+            if (error.response && error.response.status === 401) {
+                alert("Session expired or unauthorized. Please log out and log in again to record and get legal guidance.");
+            } else {
+                alert("Failed to transcribe audio. Please ensure the backend server is running and configured correctly.");
+            }
         } finally {
             setIsUploading(false);
         }
     };
 
     return (
-        <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
-            <h4 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
-                </svg>
-                Voice Recording
-            </h4>
-            
-            <div className="flex flex-wrap gap-4 items-center">
-                {!isRecording ? (
-                    <button 
-                        className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors shadow-sm shadow-blue-200 active:scale-95" 
-                        onClick={startRecording}
-                    >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        Start Recording
-                    </button>
-                ) : (
-                    <button 
-                        className="flex items-center gap-2 px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-medium rounded-xl transition-colors shadow-sm shadow-red-200 active:scale-95 animate-pulse" 
-                        onClick={stopRecording}
-                    >
-                        <span className="w-3 h-3 bg-white rounded-sm"></span>
-                        Stop Recording
-                    </button>
-                )}
+        <div className="relative shrink-0">
+            {isRecording ? (
+                <button 
+                    type="button"
+                    title="Stop Recording"
+                    className="w-[50px] h-[50px] flex items-center justify-center bg-red-500 hover:bg-red-600 text-white rounded-xl transition-all shadow-sm active:scale-95 animate-pulse" 
+                    onClick={stopRecording}
+                >
+                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <rect x="6" y="6" width="12" height="12" rx="2"></rect>
+                    </svg>
+                </button>
+            ) : isUploading ? (
+                <button 
+                    type="button"
+                    disabled
+                    title="Transcribing..."
+                    className="w-[50px] h-[50px] flex items-center justify-center bg-emerald-500 text-white rounded-xl shadow-sm cursor-not-allowed opacity-80" 
+                >
+                    <svg className="animate-spin w-5 h-5 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </button>
+            ) : (
+                <button 
+                    type="button"
+                    title="Start Voice Recording"
+                    className="w-[50px] h-[50px] flex items-center justify-center bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 rounded-xl transition-all active:scale-95" 
+                    onClick={startRecording}
+                >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+                    </svg>
+                </button>
+            )}
 
-                {audioBlob && (
-                    <button 
-                        className="flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-xl transition-colors shadow-sm shadow-emerald-200 disabled:opacity-70 disabled:cursor-not-allowed active:scale-95" 
-                        onClick={handleUpload}
-                        disabled={isUploading}
-                    >
-                        {isUploading ? (
-                            <>
-                                <svg className="animate-spin w-5 h-5 text-white" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                Transcribing...
-                            </>
-                        ) : (
-                            <>
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
-                                </svg>
-                                Upload & Transcribe
-                            </>
-                        )}
-                    </button>
-                )}
-            </div>
-            
             {isRecording && (
-                <div className="flex items-center gap-2 mt-4 text-red-500 font-medium">
-                    <span className="relative flex h-3 w-3">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                    </span>
-                    Recording in progress...
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-md shadow-md whitespace-nowrap animate-bounce z-10">
+                    Recording... Click to Stop
                 </div>
             )}
         </div>

@@ -27,7 +27,10 @@ const AILegalHelpPage = () => {
         setIsLoading(true);
 
         try {
-            const data = await askLegalQuestion({ question: userMessage });
+            const data = await askLegalQuestion({ 
+                question: userMessage,
+                history: messages.slice(1)
+            });
             setMessages(prev => [...prev, { 
                 role: 'ai', 
                 content: data.answer || data.message || "I couldn't process that request." 

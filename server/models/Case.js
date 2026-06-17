@@ -4,10 +4,7 @@ const caseSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     title: { type: String, required: true },
     description: { type: String, required: true },
-    category: { 
-        type: String, 
-        enum: ['RTI', 'Consumer', 'Labour', 'Family', 'Property', 'Criminal'] 
-    },
+    category: { type: String },
     status: { 
         type: String, 
         enum: ['open', 'in-progress', 'closed'], 
