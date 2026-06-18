@@ -72,6 +72,7 @@ India me, yeh case **Transfer of Property Act, 1882** (Section 106 ke tehat 15-d
 Yeh guidance testing purpose ke liye ek mock response hai.`;
         }
 
+        // Default to English Mock (with premium layout structure)
         return `### Problem Understanding
 You are facing eviction from your rented flat without proper notice from your landlord.
 
@@ -134,16 +135,27 @@ You MUST format your output under these exact headings and nothing else:
                 });
 
                 if (history && history.length > 0) {
-                    const activeHistory = history.slice(-4);
-                    const formattedHistory = activeHistory.map(msg => ({
+                    let formattedHistory = history.map(msg => ({
                         role: msg.role === 'user' ? 'user' : 'model',
-                        parts: [{ text: msg.content }]
-                    }));
-                    const chat = model.startChat({
-                        history: formattedHistory
-                    });
-                    const result = await chat.sendMessage(finalQuery);
-                    responseText = result.response.text();
+                        parts: [{ text: msg.content || "" }]
+                    })).filter(h => h.parts[0].text && h.parts[0].text.trim() !== "");
+
+                    // Gemini requires that the first message in chat history has the role 'user'.
+                    while (formattedHistory.length > 0 && formattedHistory[0].role !== 'user') {
+                        formattedHistory.shift();
+                    }
+
+                    const activeHistory = formattedHistory.slice(-4);
+                    if (activeHistory.length > 0) {
+                        const chat = model.startChat({
+                            history: activeHistory
+                        });
+                        const result = await chat.sendMessage(finalQuery);
+                        responseText = result.response.text();
+                    } else {
+                        const result = await model.generateContent(finalQuery);
+                        responseText = result.response.text();
+                    }
                 } else {
                     const result = await model.generateContent(finalQuery);
                     responseText = result.response.text();

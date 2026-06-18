@@ -103,7 +103,12 @@ const transcribeAudio = async (filePath, language) => {
       }
     };
 
-    const modelsToTry = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+    const modelsToTry = [
+      'gemini-2.5-flash',
+      'gemini-flash-latest',
+      'gemini-2.0-flash-lite',
+      'gemini-2.5-pro'
+    ];
     let lastError;
     let transcript;
 
