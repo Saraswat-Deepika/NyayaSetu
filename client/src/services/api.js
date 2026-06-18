@@ -25,9 +25,27 @@ export const loginUser = async (credentials) => {
     return response.data;
 };
 
-export const askLegalQuestion = async (queryData) => {
-    const response = await api.post('/legal/ask', queryData);
-    return response.data;
+export const askLegalQuestion = async (queryOrData, language) => {
+    const token = localStorage.getItem('token');
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    
+    let requestData;
+    if (typeof queryOrData === 'object' && queryOrData !== null) {
+        requestData = queryOrData;
+    } else {
+        requestData = { query: queryOrData, language };
+    }
+
+    const response = await axios.post(`${baseUrl}/legal/ask`, requestData, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    });
+
+    if (typeof queryOrData === 'object' && queryOrData !== null) {
+        return response.data;
+    }
+    return response.data.response || response.data.answer || response.data.guidance || response.data;
 };
 
 export const uploadDocument = async (formData) => {

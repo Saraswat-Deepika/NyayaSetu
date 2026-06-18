@@ -2,7 +2,26 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-const getLegalGuidance = async (userQuery, history, language) => {
+const MODELS_TO_TRY = [
+    'gemini-2.5-flash',
+    'gemini-flash-latest',
+    'gemini-2.0-flash-lite',
+    'gemini-2.5-pro',
+    'gemini-1.5-flash',
+    'gemini-1.5-pro'
+];
+
+const getLegalGuidance = async (userQuery, historyOrLanguage, languageOrUndefined) => {
+    let history = [];
+    let language = 'English';
+
+    if (Array.isArray(historyOrLanguage)) {
+        history = historyOrLanguage;
+        language = languageOrUndefined || 'English';
+    } else if (typeof historyOrLanguage === 'string') {
+        language = historyOrLanguage;
+    }
+
     if (process.env.MOCK_AI === 'true') {
         const langKey = (language || 'english').toLowerCase();
         console.log('🧪 [MOCK MODE] Generating legal guidance in:', langKey);
@@ -53,7 +72,6 @@ India me, yeh case **Transfer of Property Act, 1882** (Section 106 ke tehat 15-d
 Yeh guidance testing purpose ke liye ek mock response hai.`;
         }
 
-        // Default to English Mock (with premium layout structure)
         return `### Problem Understanding
 You are facing eviction from your rented flat without proper notice from your landlord.
 
@@ -104,11 +122,10 @@ You MUST format your output under these exact headings and nothing else:
         const promptConstraint = `\n\n[INSTRUCTION: Answer extremely briefly. Use only 1-2 short bullet points or a simple step-wise list under each heading. Keep the entire response under 150 words total. Do not include any introductory text, warnings, or conversational filler. Start directly with the headings. It must be very easy for a common citizen to understand.]`;
         const finalQuery = `${userQuery}${promptConstraint}`;
 
-        const modelsToTry = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
         let lastError;
         let responseText;
 
-        for (const modelName of modelsToTry) {
+        for (const modelName of MODELS_TO_TRY) {
             try {
                 console.log(`⚖️ Attempting legal guidance generation with model: ${modelName}`);
                 const model = genAI.getGenerativeModel({ 
@@ -117,7 +134,6 @@ You MUST format your output under these exact headings and nothing else:
                 });
 
                 if (history && history.length > 0) {
-                    // Limit history context to last 4 messages (2 turns) to avoid style contamination and latency
                     const activeHistory = history.slice(-4);
                     const formattedHistory = activeHistory.map(msg => ({
                         role: msg.role === 'user' ? 'user' : 'model',
@@ -154,16 +170,26 @@ You MUST format your output under these exact headings and nothing else:
     }
 };
 
-const generateDocumentSummary = async (documentText) => {
-    try {
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-        const prompt = `Please provide a concise legal summary of the following document text:\n\n${documentText}`;
-        const result = await model.generateContent(prompt);
-        return result.response.text();
-    } catch (error) {
-        console.error("Gemini Summary Error:", error);
-        throw new Error("Failed to generate document summary.");
+const generateDocumentSummary = async (text) => {
+    let lastError;
+    
+    for (const modelName of MODELS_TO_TRY) {
+        try {
+            console.log(`⚖️ Attempting document summary with model: ${modelName}`);
+            const model = genAI.getGenerativeModel({ 
+                model: modelName
+            });
+
+            const prompt = `Please provide a concise legal summary of the following document text:\n\n${text}`;
+            const result = await model.generateContent(prompt);
+            return result.response.text();
+        } catch (error) {
+            console.error(`[Gemini API] Summary failed with model ${modelName}:`, error.message);
+            lastError = error;
+        }
     }
+    
+    throw new Error(lastError?.message || "Failed to generate document summary after trying multiple models.");
 };
 
 module.exports = { getLegalGuidance, generateDocumentSummary };
