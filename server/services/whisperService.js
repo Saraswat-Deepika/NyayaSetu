@@ -104,10 +104,13 @@ const transcribeAudio = async (filePath, language) => {
     };
 
     const modelsToTry = [
+      'gemini-3-flash-preview',
+      'gemini-3.1-flash-lite',
       'gemini-2.5-flash',
       'gemini-flash-latest',
       'gemini-2.0-flash-lite',
-      'gemini-2.5-pro'
+      'gemini-2.5-pro',
+      'gemini-3.5-flash'
     ];
     let lastError;
     let transcript;
@@ -115,7 +118,7 @@ const transcribeAudio = async (filePath, language) => {
     for (const modelName of modelsToTry) {
       try {
         console.log(`📡 Attempting transcription with model: ${modelName}`);
-        const model = genAI.getGenerativeModel({ model: modelName });
+        const model = genAI.getGenerativeModel({ model: modelName }, { timeout: 15000 });
         const result = await model.generateContent([audioPart, { text: promptText }]);
         transcript = result.response.text();
         if (transcript) {

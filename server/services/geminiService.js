@@ -3,12 +3,15 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const MODELS_TO_TRY = [
+    'gemini-3-flash-preview',
+    'gemini-3.1-flash-lite',
+    'gemini-3.5-flash',
     'gemini-2.5-flash',
+    'gemini-2.0-flash',
     'gemini-flash-latest',
     'gemini-2.0-flash-lite',
     'gemini-2.5-pro',
-    'gemini-1.5-flash',
-    'gemini-1.5-pro'
+    'gemini-flash-lite-latest'
 ];
 
 const getLegalGuidance = async (userQuery, historyOrLanguage, languageOrUndefined) => {
@@ -109,7 +112,7 @@ You MUST format your output under these exact headings and nothing else:
 (List only the direct applicable Acts/Sections in a bulleted list)
 
 ### Suggested Actions (Step-by-step)
-(Provide a step-by-step list of immediate actions the user should take)
+(Provide a clear, detailed, and chronological step-by-step checklist of immediate practical actions the user should take. Crucially, the very first step must be the immediate action required for the specific situation. For example, if the issue is a crime or lost/stolen belongings, the first step must explicitly guide them to visit the nearest police station or use a citizen portal to file a lost report, complaint, or FIR. Adapt the sequence of steps to fit the user's specific problem.)
 
 ### Required Documents
 (List only the required documents in a bulleted list)
@@ -120,7 +123,7 @@ You MUST format your output under these exact headings and nothing else:
 ### Disclaimer
 (Include a short, standard 1-sentence legal disclaimer)`;
         
-        const promptConstraint = `\n\n[INSTRUCTION: Answer extremely briefly. Use only 1-2 short bullet points or a simple step-wise list under each heading. Keep the entire response under 150 words total. Do not include any introductory text, warnings, or conversational filler. Start directly with the headings. It must be very easy for a common citizen to understand.]`;
+        const promptConstraint = `\n\n[INSTRUCTION: Answer clearly and concisely. Under the 'Suggested Actions (Step-by-step)' heading, provide a complete, logical step-by-step list of actions, showing exactly what to do first, second, etc., tailored to the user's specific problem. Keep the entire response under 300 words total. Do not include any introductory text, warnings, or conversational filler. Start directly with the headings. It must be very easy for a common citizen to understand.]`;
         const finalQuery = `${userQuery}${promptConstraint}`;
 
         let lastError;
@@ -132,7 +135,7 @@ You MUST format your output under these exact headings and nothing else:
                 const model = genAI.getGenerativeModel({ 
                     model: modelName,
                     systemInstruction: systemInstruction 
-                });
+                }, { timeout: 10000 });
 
                 if (history && history.length > 0) {
                     let formattedHistory = history.map(msg => ({
@@ -190,7 +193,7 @@ const generateDocumentSummary = async (text) => {
             console.log(`⚖️ Attempting document summary with model: ${modelName}`);
             const model = genAI.getGenerativeModel({ 
                 model: modelName
-            });
+            }, { timeout: 10000 });
 
             const prompt = `Please provide a concise legal summary of the following document text:\n\n${text}`;
             const result = await model.generateContent(prompt);

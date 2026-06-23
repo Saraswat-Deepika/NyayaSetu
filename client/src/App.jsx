@@ -43,7 +43,11 @@ const AppRoutes = () => {
                 <Route path="documents" element={<DocumentUploadPage />} />
                 <Route path="legal-help" element={<AILegalHelpPage />} />
                 <Route path="settings" element={<SettingsPage />} />
+                {/* Fallback for unmatched dashboard sub-routes */}
+                <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Route>
+            {/* Global fallback for completely invalid URLs */}
+            <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
     );
 };

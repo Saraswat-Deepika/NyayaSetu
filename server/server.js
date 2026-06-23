@@ -33,6 +33,7 @@ const voiceRoutes = require('./routes/voice');
 const translateRoutes = require('./routes/translate');
 const legalRoutes = require('./routes/legal');
 const documentsRoutes = require('./routes/documents');
+const banditRoutes = require('./routes/bandit');
 
 // Use Routes
 app.use('/api/auth', authRoutes);
@@ -40,9 +41,11 @@ app.use('/api/legal', legalRoutes);
 app.use('/api/documents', documentsRoutes);
 app.use('/api/voice', voiceRoutes);
 app.use('/api/translate', translateRoutes);
+app.use('/api', banditRoutes);
 
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
 });
+// Trigger reload for MOCK_AI config change

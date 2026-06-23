@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { askLegalQuestion } from '../services/api';
+import { askLegalQuestion, submitFeedback } from '../services/api';
 import ReactMarkdown from 'react-markdown';
 
 const AILegalHelpPage = () => {
@@ -18,6 +18,18 @@ const AILegalHelpPage = () => {
         scrollToBottom();
     }, [messages]);
 
+    const handleFeedback = async (msgIndex, queryId, feedbackType) => {
+        try {
+            await submitFeedback(queryId, feedbackType);
+            setMessages(prev => prev.map((msg, idx) => 
+                idx === msgIndex ? { ...msg, feedback: feedbackType } : msg
+            ));
+        } catch (error) {
+            console.error("Failed to submit feedback:", error);
+            alert("Failed to submit feedback. Please try again.");
+        }
+    };
+
     const handleSend = async () => {
         if (!input.trim()) return;
 
@@ -34,7 +46,10 @@ const AILegalHelpPage = () => {
             const answer = data.answer || data.guidance || data.response;
             setMessages(prev => [...prev, { 
                 role: 'ai', 
-                content: answer || "I couldn't process that request." 
+                content: answer || "I couldn't process that request.",
+                queryId: data.case?._id,
+                strategy: data.selectedStrategy,
+                feedback: 'none'
             }]);
         } catch (error) {
             console.error("Failed to get legal help:", error);
@@ -82,7 +97,41 @@ const AILegalHelpPage = () => {
                                 {msg.role === 'user' ? (
                                     <p>{msg.content}</p>
                                 ) : (
-                                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                                    <>
+                                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                                        
+                                        {msg.queryId && (
+                                            <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-end gap-2 text-xs text-slate-400">
+                                                <div className="flex items-center gap-2">
+                                                    <span>Was this helpful?</span>
+                                                    <button 
+                                                        disabled={msg.feedback && msg.feedback !== 'none'}
+                                                        onClick={() => handleFeedback(index, msg.queryId, 'helpful')}
+                                                        className={`p-1 rounded-lg border transition-all ${
+                                                            msg.feedback === 'helpful'
+                                                                ? 'bg-green-50 border-green-200 text-green-600'
+                                                                : 'border-slate-200 hover:bg-slate-50 text-slate-500'
+                                                        }`}
+                                                        title="Helpful"
+                                                    >
+                                                        👍
+                                                    </button>
+                                                    <button 
+                                                        disabled={msg.feedback && msg.feedback !== 'none'}
+                                                        onClick={() => handleFeedback(index, msg.queryId, 'not-helpful')}
+                                                        className={`p-1 rounded-lg border transition-all ${
+                                                            msg.feedback === 'not-helpful'
+                                                                ? 'bg-red-50 border-red-200 text-red-600'
+                                                                : 'border-slate-200 hover:bg-slate-50 text-slate-500'
+                                                        }`}
+                                                        title="Not Helpful"
+                                                    >
+                                                        👎
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
                                 )}
                             </div>
                         </div>

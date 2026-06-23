@@ -71,4 +71,19 @@ export const translateText = async (textData) => {
     return response.data;
 };
 
+export const getBanditStats = async () => {
+    const response = await api.get('/bandit/stats');
+    return response.data;
+};
+
+export const getBanditCategoryStats = async (category) => {
+    const response = await api.get(`/bandit/category/${encodeURIComponent(category)}`);
+    return response.data;
+};
+
+export const submitFeedback = async (queryId, feedback) => {
+    const response = await api.post('/feedback', { queryId, feedback });
+    return response.data;
+};
+
 export default api;

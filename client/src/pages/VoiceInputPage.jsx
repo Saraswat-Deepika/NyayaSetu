@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import VoiceInput from '../components/VoiceInput';
-import { askLegalQuestion } from '../services/api';
+import { askLegalQuestion, submitFeedback } from '../services/api';
 import ReactMarkdown from 'react-markdown';
 
 const VoiceInputPage = () => {
@@ -23,6 +23,7 @@ const VoiceInputPage = () => {
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [selectedLanguage, setSelectedLanguage] = useState('English');
+    
     const messagesEndRef = useRef(null);
 
     const SUPPORTED_LANGUAGES = [
@@ -53,6 +54,18 @@ const VoiceInputPage = () => {
         localStorage.setItem('nyayasetu_chat_history', JSON.stringify(messages));
     }, [messages]);
 
+    const handleFeedback = async (msgIndex, queryId, feedbackType) => {
+        try {
+            await submitFeedback(queryId, feedbackType);
+            setMessages(prev => prev.map((msg, idx) => 
+                idx === msgIndex ? { ...msg, feedback: feedbackType } : msg
+            ));
+        } catch (error) {
+            console.error("Failed to submit feedback:", error);
+            alert("Failed to submit feedback. Please try again.");
+        }
+    };
+
     const handleSend = async () => {
         if (!input.trim()) return;
 
@@ -70,7 +83,10 @@ const VoiceInputPage = () => {
             });
             setMessages(prev => [...prev, { 
                 role: 'ai', 
-                content: data.answer || data.guidance || "I couldn't process that request." 
+                content: data.answer || data.guidance || "I couldn't process that request.",
+                queryId: data.case?._id,
+                strategy: data.selectedStrategy,
+                feedback: 'none'
             }]);
         } catch (error) {
             console.error("Failed to get legal help:", error);
@@ -99,7 +115,9 @@ const VoiceInputPage = () => {
     };
 
     return (
-        <div className="px-6 py-4 w-full h-[calc(100vh-5.5rem)] flex flex-col overflow-hidden">
+        <div 
+            className="px-6 py-4 w-full h-[calc(100vh-5.5rem)] flex flex-col overflow-hidden relative"
+        >
             <div className="mb-3 shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-2xl font-bold text-slate-800 tracking-tight">AI Legal Assistant</h2>
@@ -122,7 +140,7 @@ const VoiceInputPage = () => {
                 </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 flex-1 flex flex-col overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 flex-1 flex flex-col overflow-hidden animate-fade-in">
                 {/* Chat Area */}
                 <div className="flex-1 p-5 overflow-y-auto bg-slate-50/50 space-y-5">
                     {messages.map((msg, index) => (
@@ -142,6 +160,38 @@ const VoiceInputPage = () => {
                                 ) : (
                                     <div className="prose prose-slate prose-sm whitespace-pre-wrap">
                                         <ReactMarkdown>{msg.content || ''}</ReactMarkdown>
+                                        
+                                        {msg.queryId && (
+                                            <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-end gap-2 text-xs text-slate-400">
+                                                <div className="flex items-center gap-2">
+                                                    <span>Was this helpful?</span>
+                                                    <button 
+                                                        disabled={msg.feedback && msg.feedback !== 'none'}
+                                                        onClick={() => handleFeedback(index, msg.queryId, 'helpful')}
+                                                        className={`p-1 rounded-lg border transition-all ${
+                                                            msg.feedback === 'helpful'
+                                                                ? 'bg-green-50 border-green-200 text-green-600'
+                                                                : 'border-slate-200 hover:bg-slate-50 text-slate-500'
+                                                        }`}
+                                                        title="Helpful"
+                                                    >
+                                                        👍
+                                                    </button>
+                                                    <button 
+                                                        disabled={msg.feedback && msg.feedback !== 'none'}
+                                                        onClick={() => handleFeedback(index, msg.queryId, 'not-helpful')}
+                                                        className={`p-1 rounded-lg border transition-all ${
+                                                            msg.feedback === 'not-helpful'
+                                                                ? 'bg-red-50 border-red-200 text-red-600'
+                                                                : 'border-slate-200 hover:bg-slate-50 text-slate-500'
+                                                        }`}
+                                                        title="Not Helpful"
+                                                    >
+                                                        👎
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -164,21 +214,27 @@ const VoiceInputPage = () => {
                     <div ref={messagesEndRef} />
                 </div>
 
-                {/* Text & Voice Input Area */}
-                <div className="p-4 bg-white border-t border-slate-100 shrink-0 flex flex-col gap-2">
+                {/* Text & Voice Input Area (relative for overlay positioning) */}
+                <div className="relative p-4 bg-white border-t border-slate-100 shrink-0 flex flex-col gap-2">
                     <div className="flex gap-3 items-end">
                         <VoiceInput 
                             history={messages.slice(1)} // skip the greeting message
                             language={selectedLanguage}
                             onUploadStart={() => setIsLoading(true)}
-                            onUploadSuccess={(transcription, aiResponse) => {
+                            onUploadSuccess={(transcription, aiResponse, selectedStrategy, caseId) => {
                                 setIsLoading(false);
                                 console.log("Audio Uploaded");
-                                console.log("Whisper Response Received", { transcription, aiResponse });
+                                console.log("Whisper Response Received", { transcription, aiResponse, selectedStrategy, caseId });
                                 setMessages(prev => [
                                     ...prev, 
                                     { role: 'user', content: transcription },
-                                    { role: 'ai', content: aiResponse }
+                                    { 
+                                        role: 'ai', 
+                                        content: aiResponse,
+                                        queryId: caseId,
+                                        strategy: selectedStrategy,
+                                        feedback: 'none'
+                                    }
                                 ]);
                                 console.log("Transcription Displayed:", transcription);
                             }}
