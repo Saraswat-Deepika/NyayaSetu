@@ -34,17 +34,17 @@ const Dashboard = () => {
     }, []);
 
     return (
-        <div className="p-8 max-w-7xl mx-auto space-y-8 min-h-screen bg-slate-50/50">
+        <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 sm:space-y-8 min-h-screen bg-slate-50/50">
             {/* Welcome Banner */}
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-3xl p-8 text-white shadow-xl shadow-blue-500/10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-3xl p-6 sm:p-8 text-white shadow-xl shadow-blue-500/10 flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-3xl font-extrabold tracking-tight flex items-center gap-3">
+                    <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight flex items-center gap-3">
                         Welcome back, {user?.name}! <span className="animate-bounce">👋</span>
                     </h1>
-                    <p className="text-blue-100 text-lg mt-1 font-medium">Your AI-Powered Legal Aid Assistant dashboard and analysis workspace.</p>
+                    <p className="text-blue-100 text-sm sm:text-base md:text-lg mt-1 font-medium">Your AI-Powered Legal Aid Assistant dashboard and analysis workspace.</p>
                 </div>
-                <div className="flex gap-3">
-                    <Link to="/dashboard/documents" className="px-5 py-2.5 bg-white text-blue-600 font-bold rounded-xl shadow-md hover:bg-blue-50 transition-all text-sm flex items-center gap-2">
+                <div className="flex gap-3 shrink-0 w-full md:w-auto">
+                    <Link to="/dashboard/documents" className="w-full md:w-auto justify-center px-5 py-2.5 bg-white text-blue-600 font-bold rounded-xl shadow-md hover:bg-blue-50 transition-all text-sm flex items-center gap-2">
                         <FileText className="w-4 h-4" /> Upload Document
                     </Link>
                 </div>
@@ -56,7 +56,7 @@ const Dashboard = () => {
                     <Sparkles className="text-blue-500 w-5 h-5" />
                     Quick Assistance Hub
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     <Link to="/dashboard/voice" className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/50 hover:shadow-md hover:border-blue-200/60 transition-all group relative overflow-hidden">
                         <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-inner">
                             <Mic className="w-6 h-6" />
@@ -95,7 +95,7 @@ const Dashboard = () => {
             ) : (
                 <div className="space-y-8">
                     {/* Analytics Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         {/* Total Docs */}
                         <div className="bg-white p-6 rounded-2xl border border-slate-200/50 shadow-sm flex items-center gap-4">
                             <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shadow-inner">

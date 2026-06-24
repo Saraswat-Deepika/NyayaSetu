@@ -51,28 +51,28 @@ const AILegalHelpPage = () => {
     };
 
     return (
-        <div className="p-8 max-w-4xl mx-auto h-[calc(100vh-4rem)] flex flex-col">
-            <div className="mb-6">
-                <h2 className="text-3xl font-bold text-slate-800 tracking-tight">AI Legal Help</h2>
-                <p className="text-slate-500 mt-2 text-lg">
+        <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto h-[calc(100vh-4rem)] lg:h-[calc(100vh-2rem)] flex flex-col">
+            <div className="mb-4 sm:mb-6">
+                <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 tracking-tight">AI Legal Help</h2>
+                <p className="text-slate-500 mt-2 text-sm sm:text-base md:text-lg">
                     Get instant guidance, know your rights, and access legal draft templates powered by Gemini AI.
                 </p>
             </div>
 
             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 flex-1 flex flex-col overflow-hidden">
                 {/* Chat Area */}
-                <div className="flex-1 p-6 overflow-y-auto bg-slate-50/50 space-y-6">
+                <div className="flex-1 p-4 sm:p-6 overflow-y-auto bg-slate-50/50 space-y-6">
                     {messages.map((msg, index) => (
-                        <div key={index} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                        <div key={index} className={`flex gap-3 sm:gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                            <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0 text-sm sm:text-base ${
                                 msg.role === 'user' ? 'bg-blue-100 text-blue-600' : 'bg-indigo-100 text-indigo-600'
                             }`}>
                                 {msg.role === 'user' ? '👤' : '⚖️'}
                             </div>
-                            <div className={`p-4 rounded-2xl shadow-sm border border-slate-100 max-w-[80%] ${
+                            <div className={`p-3 sm:p-4 rounded-2xl shadow-sm border border-slate-100 max-w-[85%] sm:max-w-[80%] text-xs sm:text-sm ${
                                 msg.role === 'user' 
-                                    ? 'bg-blue-600 text-white rounded-tr-sm' 
-                                    : 'bg-white text-slate-700 rounded-tl-sm prose prose-sm'
+                                     ? 'bg-blue-600 text-white rounded-tr-sm' 
+                                    : 'bg-white text-slate-700 rounded-tl-sm prose prose-sm leading-relaxed'
                             }`}>
                                 {msg.role === 'user' ? (
                                     <p>{msg.content}</p>
@@ -84,14 +84,14 @@ const AILegalHelpPage = () => {
                     ))}
                     
                     {isLoading && (
-                        <div className="flex gap-4">
-                            <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+                        <div className="flex gap-3 sm:gap-4">
+                            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0 text-sm sm:text-base">
                                 ⚖️
                             </div>
-                            <div className="bg-white p-4 rounded-2xl rounded-tl-sm shadow-sm border border-slate-100 text-slate-500 flex gap-2 items-center">
-                                <div className="w-2 h-2 rounded-full bg-slate-300 animate-bounce"></div>
-                                <div className="w-2 h-2 rounded-full bg-slate-300 animate-bounce delay-100"></div>
-                                <div className="w-2 h-2 rounded-full bg-slate-300 animate-bounce delay-200"></div>
+                            <div className="bg-white p-3 sm:p-4 rounded-2xl rounded-tl-sm shadow-sm border border-slate-100 text-slate-500 flex gap-2 items-center">
+                                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-slate-300 animate-bounce"></div>
+                                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-slate-300 animate-bounce delay-100"></div>
+                                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-slate-300 animate-bounce delay-200"></div>
                             </div>
                         </div>
                     )}
@@ -100,18 +100,18 @@ const AILegalHelpPage = () => {
 
                 {/* Input Area */}
                 <div className="p-4 bg-white border-t border-slate-100">
-                    <div className="flex gap-4 items-end">
+                    <div className="flex gap-3 sm:gap-4 items-end">
                         <textarea 
                             rows="2"
-                            className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                            placeholder="Type your legal question here... (Press Enter to send)"
+                            className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-xs sm:text-sm"
+                            placeholder="Type your legal question here..."
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={handleKeyDown}
                             disabled={isLoading}
                         ></textarea>
                         <button 
-                            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors shadow-sm h-[50px] shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-4 sm:px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors shadow-sm h-[48px] sm:h-[50px] shrink-0 disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm"
                             onClick={handleSend}
                             disabled={isLoading || !input.trim()}
                         >

@@ -1,0 +1,57 @@
+
+NEGOTIABLE INSTRUMENTS ACT 1881 - CHEQUE BOUNCE PROVISIONS
+
+SECTION 138 - DISHONOUR OF CHEQUE FOR INSUFFICIENCY OF FUNDS
+Where any cheque drawn by a person on an account maintained by him with a banker 
+for payment of any amount of money to another person from out of that account 
+for the discharge of any debt or other liability is returned by the bank unpaid 
+either because of the amount of money standing to the credit of that account is 
+insufficient to honour the cheque or that it exceeds the arrangement made by 
+the drawer of the cheque with his banker, such person shall be deemed to have 
+committed an offence.
+
+PUNISHMENT: Imprisonment up to 2 years, or fine up to twice the cheque amount, or both.
+
+CONDITIONS FOR OFFENCE UNDER SECTION 138
+1. Cheque must be for discharge of legally enforceable debt
+2. Cheque presented to bank within 3 months of issue date
+3. Bank must return cheque unpaid
+4. Payee must send demand notice within 30 days of cheque return memo
+5. Drawer must fail to pay within 15 days of receiving notice
+6. Complaint must be filed within 30 days of expiry of 15-day notice period
+
+DEMAND NOTICE REQUIREMENTS
+Notice must be in writing. Must demand payment of cheque amount. 
+Must be sent within 30 days of receiving bank's return memo.
+Send by registered post or speed post. Keep postal receipt safely.
+
+SECTION 139 - PRESUMPTION IN FAVOUR OF HOLDER
+It shall be presumed unless contrary is proved that the holder received the cheque 
+for the discharge of a debt or other liability.
+
+SECTION 140 - DEFENCE NOT ALLOWED
+It shall not be a defence that the drawer had no reason to believe that the cheque 
+would be dishonoured.
+
+SECTION 141 - OFFENCES BY COMPANIES
+If the person committing offence is a company, every person who at the time of 
+offence was in charge of and responsible to the company for the conduct of business 
+shall be deemed to be guilty of the offence.
+
+SECTION 143 - POWER TO TRY CASES SUMMARILY
+All cheque bounce offences shall be tried by Judicial Magistrate First Class.
+Cases must be tried summarily for expedient disposal.
+
+SECTION 143A - INTERIM COMPENSATION
+Court may direct drawer to pay interim compensation up to 20% of cheque amount 
+during pendency of trial.
+
+SECTION 148 - POWER OF APPELLATE COURT
+Appellate court may direct appellant to deposit minimum 20% of fine or compensation 
+awarded while hearing appeal.
+
+IMPORTANT JUDGMENTS
+Dashrath Rupsingh Rathod vs State of Maharashtra (2014): Complaint must be filed 
+where the cheque was presented to the bank.
+M/s Meters and Instruments vs Kanchan Mehta (2017): Compounding of offence allowed 
+even after conviction.
