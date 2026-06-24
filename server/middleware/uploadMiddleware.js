@@ -2,45 +2,36 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Ensure uploads directory exists
-const uploadDir = 'uploads/';
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-}
+const uploadDir = path.join(__dirname, '../uploads');
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
-// Set storage engine
 const storage = multer.diskStorage({
-    destination: function(req, file, cb) {
-        cb(null, uploadDir);
-    },
-    filename: function(req, file, cb) {
-        cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
-    }
+  destination: (req, file, cb) => cb(null, uploadDir),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) || '.webm';
+    cb(null, `${file.fieldname}-${Date.now()}${ext}`);
+  }
 });
 
-// Check File Type
-function checkFileType(file, cb) {
-    // Allowed ext
-    const filetypes = /jpeg|jpg|png|pdf|doc|docx|mp3|wav|ogg|m4a/;
-    // Check ext
-    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-    // Check mime
-    const mimetype = filetypes.test(file.mimetype);
+const checkFileType = (file, cb) => {
+  // ✅ webm, mp3, wav, pdf, images sab allow karo
+  const allowedTypes = /jpeg|jpg|png|pdf|webm|mp3|wav|ogg|mp4|m4a/;
+  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = allowedTypes.test(file.mimetype) ||
+    file.mimetype.startsWith('audio/') ||
+    file.mimetype.startsWith('video/') ||
+    file.mimetype === 'application/octet-stream'; // browser sometimes sends this
 
-    if (mimetype && extname) {
-        return cb(null, true);
-    } else {
-        cb(new Error('Error: Images, Documents, and Audio Only!'));
-    }
-}
+  if (extname || mimetype) {
+    return cb(null, true);
+  }
+  cb(new Error(`File type not allowed: ${file.mimetype}`));
+};
 
-// Init Upload
 const upload = multer({
-    storage: storage,
-    limits: { fileSize: 10000000 }, // 10MB limit
-    fileFilter: function(req, file, cb) {
-        checkFileType(file, cb);
-    }
+  storage,
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
+  fileFilter: (req, file, cb) => checkFileType(file, cb)
 });
 
 module.exports = upload;

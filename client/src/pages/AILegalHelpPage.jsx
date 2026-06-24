@@ -1,14 +1,72 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { askLegalQuestion } from '../services/api';
+import { 
+    askLegalQuestion, 
+    submitFeedback, 
+    getChatSessions, 
+    getChatSessionById, 
+    deleteChatSession
+} from '../services/api';
 import ReactMarkdown from 'react-markdown';
+import VoiceInput from '../components/VoiceInput';
+
+const SUPPORTED_LANGUAGES = [
+    { code: 'English', label: 'English' },
+    { code: 'Hindi', label: 'Hindi (हिंदी)' },
+    { code: 'Hinglish', label: 'Hinglish (Hindi in English Script)' },
+    { code: 'Bengali', label: 'Bengali (বাংলা)' },
+    { code: 'Telugu', label: 'Telugu (తెలుగు)' },
+    { code: 'Marathi', label: 'Marathi (मराठी)' },
+    { code: 'Tamil', label: 'Tamil (தமிழ்)' },
+    { code: 'Gujarati', label: 'Gujarati (ગુજરાતી)' },
+    { code: 'Urdu', label: 'Urdu (اردو)' },
+    { code: 'Kannada', label: 'Kannada (ಕನ್ನಡ)' },
+    { code: 'Malayalam', label: 'Malayalam (മലയാളं)' },
+    { code: 'Punjabi', label: 'Punjabi (ਪੰਜਾਬੀ)' },
+    { code: 'Odia', label: 'Odia (ଓଡ଼ିଆ)' }
+];
 
 const AILegalHelpPage = () => {
+    // Layout & UX States
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [copiedMessageIndex, setCopiedMessageIndex] = useState(null);
+    const [selectedLanguage, setSelectedLanguage] = useState('English');
+
+    // Core Chat States
+    const [sessions, setSessions] = useState([]);
+    const [currentSessionId, setCurrentSessionId] = useState(null);
     const [messages, setMessages] = useState([
-        { role: 'ai', content: 'Hello! I am your AI Legal Assistant. How can I help you understand your legal rights or draft a document today?' }
+        { role: 'ai', content: 'Hello! I am your AI Legal Assistant. How can I help you understand your Indian legal rights or draft a document today?' }
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [isSessionsLoading, setIsSessionsLoading] = useState(false);
+    const [isChatLoading, setIsChatLoading] = useState(false);
+
     const messagesEndRef = useRef(null);
+    const textareaRef = useRef(null);
+
+    // Handle screen resize to close sidebar on mobile by default
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth < 1024) {
+                setIsSidebarOpen(false);
+            } else {
+                setIsSidebarOpen(true);
+            }
+        };
+        handleResize(); // Set initial
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    // Auto-grow textarea height
+    useEffect(() => {
+        if (textareaRef.current) {
+            textareaRef.current.style.height = 'auto';
+            textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 150)}px`;
+        }
+    }, [input]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -16,27 +74,140 @@ const AILegalHelpPage = () => {
 
     useEffect(() => {
         scrollToBottom();
-    }, [messages]);
+    }, [messages, isLoading]);
+
+    // Load sessions on mount
+    useEffect(() => {
+        loadSessions();
+    }, []);
+
+    const loadSessions = async () => {
+        setIsSessionsLoading(true);
+        try {
+            const data = await getChatSessions();
+            setSessions(data.sessions || []);
+        } catch (err) {
+            console.error("Error loading chat sessions:", err);
+        } finally {
+            setIsSessionsLoading(false);
+        }
+    };
+
+    const handleNewChat = () => {
+        setCurrentSessionId(null);
+        setMessages([
+            { role: 'ai', content: 'Hello! I am your AI Legal Assistant. How can I help you understand your Indian legal rights or draft a document today?' }
+        ]);
+        setInput('');
+        if (window.innerWidth < 1024) {
+            setIsSidebarOpen(false);
+        }
+    };
+
+    const handleSelectSession = async (sessionId) => {
+        if (sessionId === currentSessionId) return;
+        setIsChatLoading(true);
+        try {
+            const data = await getChatSessionById(sessionId);
+            if (data.session) {
+                setCurrentSessionId(sessionId);
+                const loadedMessages = data.session.messages || [];
+                if (loadedMessages.length === 0) {
+                    setMessages([
+                        { role: 'ai', content: 'Hello! I am your AI Legal Assistant. How can I help you understand your Indian legal rights or draft a document today?' }
+                    ]);
+                } else {
+                    setMessages(loadedMessages);
+                }
+            }
+        } catch (err) {
+            console.error("Error fetching chat session details:", err);
+            alert("Failed to load chat history.");
+        } finally {
+            setIsChatLoading(false);
+            if (window.innerWidth < 1024) {
+                setIsSidebarOpen(false); // Auto close drawer on select (mobile)
+            }
+        }
+    };
+
+    const handleDeleteSession = async (e, sessionId) => {
+        e.stopPropagation();
+        if (!confirm("Are you sure you want to delete this chat session?")) return;
+        
+        try {
+            await deleteChatSession(sessionId);
+            setSessions(prev => prev.filter(s => s._id !== sessionId));
+            if (currentSessionId === sessionId) {
+                handleNewChat();
+            }
+        } catch (err) {
+            console.error("Failed to delete chat session:", err);
+            alert("Failed to delete chat session. Please try again.");
+        }
+    };
+
+    const handleFeedback = async (msgIndex, queryId, feedbackType) => {
+        try {
+            await submitFeedback(queryId, feedbackType);
+            setMessages(prev => prev.map((msg, idx) => 
+                idx === msgIndex ? { ...msg, feedback: feedbackType } : msg
+            ));
+        } catch (error) {
+            console.error("Failed to submit feedback:", error);
+            alert("Failed to submit feedback. Please try again.");
+        }
+    };
+
+    const handleCopy = (content, index) => {
+        navigator.clipboard.writeText(content).then(() => {
+            setCopiedMessageIndex(index);
+            setTimeout(() => setCopiedMessageIndex(null), 2000);
+        }).catch(err => {
+            console.error("Failed to copy message:", err);
+        });
+    };
 
     const handleSend = async () => {
-        if (!input.trim()) return;
+        if (!input.trim() || isLoading) return;
 
         const userMessage = input.trim();
         setInput('');
+        
         setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
         setIsLoading(true);
 
         try {
-            const data = await askLegalQuestion({ question: userMessage });
+            const data = await askLegalQuestion({ 
+                question: userMessage,
+                history: messages.slice(1),
+                sessionId: currentSessionId,
+                language: selectedLanguage
+            });
+            
+            const answer = data.answer || data.guidance || data.response;
             setMessages(prev => [...prev, { 
                 role: 'ai', 
-                content: data.answer || data.message || "I couldn't process that request." 
+                content: answer || "I couldn't process that request.",
+                queryId: data.case?._id,
+                strategy: data.selectedStrategy,
+                feedback: 'none'
             }]);
+
+            if (!currentSessionId && data.sessionId) {
+                setCurrentSessionId(data.sessionId);
+            }
+            
+            // Reload list of sessions
+            const sessionsData = await getChatSessions();
+            setSessions(sessionsData.sessions || []);
+
         } catch (error) {
             console.error("Failed to get legal help:", error);
+            const errorMessage = error.response?.data?.error || "Sorry, I encountered an error while connecting to the AI service. Please try again.";
             setMessages(prev => [...prev, { 
                 role: 'ai', 
-                content: "Sorry, I encountered an error while connecting to the AI service. Please try again." 
+                content: errorMessage 
             }]);
         } finally {
             setIsLoading(false);
@@ -49,6 +220,11 @@ const AILegalHelpPage = () => {
             handleSend();
         }
     };
+
+    // Filter recent chats by query
+    const filteredSessions = sessions.filter(session => 
+        session.title.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     return (
         <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto h-[calc(100vh-4rem)] lg:h-[calc(100vh-2rem)] flex flex-col">
@@ -118,7 +294,7 @@ const AILegalHelpPage = () => {
                             Send
                         </button>
                     </div>
-                </div>
+                </main>
             </div>
         </div>
     );

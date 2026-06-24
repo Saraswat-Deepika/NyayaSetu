@@ -25,9 +25,27 @@ export const loginUser = async (credentials) => {
     return response.data;
 };
 
-export const askLegalQuestion = async (queryData) => {
-    const response = await api.post('/legal/ask', queryData);
-    return response.data;
+export const askLegalQuestion = async (queryOrData, language) => {
+    const token = localStorage.getItem('token');
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    
+    let requestData;
+    if (typeof queryOrData === 'object' && queryOrData !== null) {
+        requestData = queryOrData;
+    } else {
+        requestData = { query: queryOrData, language };
+    }
+
+    const response = await axios.post(`${baseUrl}/legal/ask`, requestData, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    });
+
+    if (typeof queryOrData === 'object' && queryOrData !== null) {
+        return response.data;
+    }
+    return response.data.response || response.data.answer || response.data.guidance || response.data;
 };
 
 export const uploadDocument = async (formData) => {
@@ -65,6 +83,36 @@ export const transcribeVoice = async (formData) => {
 
 export const translateText = async (textData) => {
     const response = await api.post('/translate', textData);
+    return response.data;
+};
+
+export const getBanditStats = async () => {
+    const response = await api.get('/bandit/stats');
+    return response.data;
+};
+
+export const getBanditCategoryStats = async (category) => {
+    const response = await api.get(`/bandit/category/${encodeURIComponent(category)}`);
+    return response.data;
+};
+
+export const submitFeedback = async (queryId, feedback) => {
+    const response = await api.post('/feedback', { queryId, feedback });
+    return response.data;
+};
+
+export const getChatSessions = async () => {
+    const response = await api.get('/legal/sessions');
+    return response.data;
+};
+
+export const getChatSessionById = async (sessionId) => {
+    const response = await api.get(`/legal/sessions/${sessionId}`);
+    return response.data;
+};
+
+export const deleteChatSession = async (sessionId) => {
+    const response = await api.delete(`/legal/sessions/${sessionId}`);
     return response.data;
 };
 
