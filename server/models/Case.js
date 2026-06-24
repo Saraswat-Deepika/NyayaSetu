@@ -6,7 +6,8 @@ const caseSchema = new mongoose.Schema({
     description: { type: String, required: true },
     category: { 
         type: String, 
-        enum: ['RTI', 'Consumer', 'Labour', 'Family', 'Property', 'Criminal'] 
+        enum: ['Property Law', 'Criminal Law', 'Consumer Rights', 'Family Law', 'Employment Law', 'RTI', 'Other'],
+        default: 'Other'
     },
     status: { 
         type: String, 
@@ -15,6 +16,16 @@ const caseSchema = new mongoose.Schema({
     },
     aiSummary: { type: String },
     language: { type: String },
+    selectedStrategy: { 
+        type: String, 
+        enum: ['RAG', 'GeminiLLM', 'LegalTemplate', 'SimilarCase', 'None'], 
+        default: 'None' 
+    },
+    feedbackStatus: { 
+        type: String, 
+        enum: ['none', 'helpful', 'not-helpful'], 
+        default: 'none' 
+    },
     documents: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Document' }]
 }, { timestamps: true });
 
