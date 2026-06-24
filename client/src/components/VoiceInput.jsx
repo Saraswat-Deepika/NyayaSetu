@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import api from '../services/api';
 
-const VoiceInput = ({ caseId, history, language, onUploadSuccess, onUploadStart, onUploadError }) => {
+const VoiceInput = ({ caseId, sessionId, history, language, onUploadSuccess, onUploadStart, onUploadError }) => {
     const [isRecording, setIsRecording] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
@@ -319,6 +319,7 @@ const VoiceInput = ({ caseId, history, language, onUploadSuccess, onUploadStart,
         const formData = new FormData();
         formData.append('audio', blob, originalName.includes('.') ? originalName : `recording.${ext}`);
         if (caseId) formData.append('caseId', caseId);
+        if (sessionId) formData.append('sessionId', sessionId);
         if (history) formData.append('history', JSON.stringify(history));
         if (language) formData.append('language', language);
 
@@ -327,7 +328,7 @@ const VoiceInput = ({ caseId, history, language, onUploadSuccess, onUploadStart,
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             console.log("Audio Uploaded & Processed Successfully", data);
-            if (onUploadSuccess) onUploadSuccess(data.transcription, data.legalResponse, data.selectedStrategy, data.case?._id);
+            if (onUploadSuccess) onUploadSuccess(data.transcription, data.legalResponse, data.selectedStrategy, data.case?._id, data.sessionId);
         } catch (error) {
             console.error("Voice upload failed:", error);
             if (onUploadError) onUploadError(error);
@@ -356,7 +357,7 @@ const VoiceInput = ({ caseId, history, language, onUploadSuccess, onUploadStart,
                 <button 
                     type="button"
                     title="Start Voice Recording"
-                    className="w-[50px] h-[50px] flex items-center justify-center bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 rounded-xl transition-all active:scale-95 cursor-pointer shadow-sm" 
+                    className="w-[50px] h-[50px] flex items-center justify-center bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-blue-400 dark:border-zinc-700 rounded-xl transition-all active:scale-95 cursor-pointer shadow-sm" 
                     onClick={startRecording}
                 >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">

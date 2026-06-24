@@ -2,6 +2,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const BanditStat = require('../models/BanditStat');
 const QueryFeedback = require('../models/QueryFeedback');
 const Case = require('../models/Case');
+const ChatSession = require('../models/ChatSession');
 const { searchRelevantDocs } = require('./ragService');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -11,14 +12,15 @@ const ARMS = ['RAG', 'GeminiLLM', 'LegalTemplate', 'SimilarCase'];
 const EXPLORATION_CONSTANT = 1.0;
 
 const MODELS_TO_TRY = [
-    'gemini-3-flash-preview',
-    'gemini-3.1-flash-lite',
-    'gemini-3.5-flash',
     'gemini-2.5-flash',
     'gemini-2.0-flash',
+    'gemini-1.5-flash',
+    'gemini-2.5-pro',
     'gemini-flash-latest',
     'gemini-2.0-flash-lite',
-    'gemini-2.5-pro',
+    'gemini-3.5-flash',
+    'gemini-3.1-flash-lite',
+    'gemini-3-flash-preview',
     'gemini-flash-lite-latest'
 ];
 
@@ -583,6 +585,12 @@ const recordFeedback = async (queryId, feedbackType) => {
         // Update Case feedback Status
         caseRecord.feedbackStatus = feedbackType;
         await caseRecord.save();
+
+        // Update feedback in ChatSession if applicable
+        await ChatSession.updateOne(
+            { "messages.queryId": queryId },
+            { $set: { "messages.$.feedback": feedbackType } }
+        );
 
         // Update BanditStat
         const stat = await BanditStat.findOne({ category, armName: selectedStrategy });

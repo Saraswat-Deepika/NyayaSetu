@@ -86,4 +86,19 @@ export const submitFeedback = async (queryId, feedback) => {
     return response.data;
 };
 
+export const getChatSessions = async () => {
+    const response = await api.get('/legal/sessions');
+    return response.data;
+};
+
+export const getChatSessionById = async (sessionId) => {
+    const response = await api.get(`/legal/sessions/${sessionId}`);
+    return response.data;
+};
+
+export const deleteChatSession = async (sessionId) => {
+    const response = await api.delete(`/legal/sessions/${sessionId}`);
+    return response.data;
+};
+
 export default api;
