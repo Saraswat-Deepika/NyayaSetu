@@ -93,6 +93,21 @@ Output valid JSON exactly matching this schema:
     "keyTakeaways": ["string"]
   },
   "simpleLanguageSummary": "string (A complete plain English explanation of the entire document that a non-lawyer can understand)",
+  "citizenSummary": {
+    "whatThisDocumentIsAbout": "string (2 to 3 simple sentences in plain language explaining what this document is about)",
+    "whoIsInvolved": "string (list of names and their roles in the document in plain language)",
+    "keyFactsAndDecisions": ["string (key facts and decisions, maximum 6 short bullet points)"],
+    "whatThisMeansForYou": "string (1 to 2 clear sentences explaining direct implications/consequences for the person, written in plain language)",
+    "whatYouShouldDoNext": ["string (numbered action steps in plain language)"],
+    "importantDatesAndDeadlines": ["string (all key deadlines, hearing dates, or dates when actions must be completed from the document)"],
+    "legalTermsExplained": [
+      {
+        "term": "string (difficult legal term or phrase used in the document)",
+        "definition": "string (simple definition of the term in plain language for a citizen)"
+      }
+    ],
+    "risksToBeAwareOf": ["string (2 to 3 plain language warnings about risks or negative consequences in the document)"]
+  },
   "riskAnalysis": [
     {
       "issue": "string (e.g. Missing signatures, High penalty)",

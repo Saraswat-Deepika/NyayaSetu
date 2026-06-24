@@ -101,20 +101,6 @@ const formatSummaryToMarkdown = (summary) => {
         markdown += `\n---\n\n`;
     }
 
-    // 6. Confidence Scores
-    if (summary.confidenceScores) {
-        markdown += `### 📊 AI Processing Confidence\n\n`;
-        if (summary.confidenceScores.ocrAccuracy !== undefined) {
-            markdown += `- **OCR Text Extraction Accuracy:** ${summary.confidenceScores.ocrAccuracy}%\n`;
-        }
-        if (summary.confidenceScores.summaryConfidence !== undefined) {
-            markdown += `- **AI Summary Confidence:** ${summary.confidenceScores.summaryConfidence}%\n`;
-        }
-        if (summary.confidenceScores.entityExtractionConfidence !== undefined) {
-            markdown += `- **Entity Extraction Confidence:** ${summary.confidenceScores.entityExtractionConfidence}%\n`;
-        }
-    }
-
     return markdown.trim();
 };
 
@@ -170,6 +156,7 @@ const uploadDocument = async (req, res) => {
         newDoc.structuredData = summary.structuredData;
         newDoc.aiSummary = summary.aiSummary;
         newDoc.simpleLanguageSummary = summary.simpleLanguageSummary;
+        newDoc.citizenSummary = summary.citizenSummary;
         newDoc.riskAnalysis = summary.riskAnalysis;
         newDoc.timeline = summary.timeline;
         newDoc.confidenceScores = summary.confidenceScores;
@@ -205,6 +192,7 @@ const getDocumentSummary = async (req, res) => {
             structuredData: doc.structuredData,
             aiSummary: doc.aiSummary,
             simpleLanguageSummary: doc.simpleLanguageSummary,
+            citizenSummary: doc.citizenSummary,
             riskAnalysis: doc.riskAnalysis,
             timeline: doc.timeline,
             confidenceScores: doc.confidenceScores
@@ -343,6 +331,7 @@ const translateDocument = async (req, res) => {
                 structuredData: doc.structuredData,
                 aiSummary: doc.aiSummary,
                 simpleLanguageSummary: doc.simpleLanguageSummary,
+                citizenSummary: doc.citizenSummary,
                 riskAnalysis: doc.riskAnalysis,
                 timeline: doc.timeline,
                 confidenceScores: doc.confidenceScores

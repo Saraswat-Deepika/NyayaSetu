@@ -45,7 +45,9 @@ async function run() {
 
         console.log("\nResponse Status:", uploadRes.status);
         console.log("Response Data Summary Key exists:", !!uploadRes.data.summary);
-        console.log("Response data snippet:", JSON.stringify(uploadRes.data).slice(0, 1000));
+        console.log("citizenSummary exists in rawSummary:", !!uploadRes.data.rawSummary?.citizenSummary);
+        console.log("citizenSummary content:", JSON.stringify(uploadRes.data.rawSummary?.citizenSummary, null, 2));
+        console.log("Response data snippet:", JSON.stringify(uploadRes.data).slice(0, 500));
 
     } catch (e) {
         if (e.response) {

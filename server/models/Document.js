@@ -35,6 +35,21 @@ const documentSchema = new mongoose.Schema({
     // Simple Language Explanations
     simpleLanguageSummary: { type: String },
     
+    // Citizen Simplified Summary
+    citizenSummary: {
+        whatThisDocumentIsAbout: String,
+        whoIsInvolved: String,
+        keyFactsAndDecisions: [String],
+        whatThisMeansForYou: String,
+        whatYouShouldDoNext: [String],
+        importantDatesAndDeadlines: [String],
+        legalTermsExplained: [{
+            term: String,
+            definition: String
+        }],
+        risksToBeAwareOf: [String]
+    },
+    
     // Legal Risk Detection
     riskAnalysis: [{
         issue: String,
