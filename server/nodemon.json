@@ -1,0 +1,7 @@
+{
+  "ignore": [
+    "faiss_store/*",
+    "uploads/*",
+    "test_*"
+  ]
+}

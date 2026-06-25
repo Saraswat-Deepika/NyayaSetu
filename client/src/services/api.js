@@ -57,6 +57,21 @@ export const uploadDocument = async (formData) => {
     return response.data;
 };
 
+export const chatWithDocument = async (documentId, query, history) => {
+    const response = await api.post(`/documents/${documentId}/chat`, { query, history });
+    return response.data;
+};
+
+export const translateDocument = async (documentId, language) => {
+    const response = await api.post(`/documents/${documentId}/translate`, { language });
+    return response.data;
+};
+
+export const getDocumentAnalytics = async () => {
+    const response = await api.get('/documents/analytics');
+    return response.data;
+};
+
 export const transcribeVoice = async (formData) => {
     const response = await api.post('/voice/transcribe', formData, {
         headers: {
