@@ -2,6 +2,9 @@ const { getLegalGuidance } = require('../services/geminiService');
 const Case = require('../models/Case');
 const ChatSession = require('../models/ChatSession');
 const banditService = require('../services/banditService');
+const { searchNearby, searchManual } = require('../services/locationService');
+const { matchLaws } = require('../services/lawService');
+const { checkEmergency } = require('../services/emergencyService');
 
 const askLegalQuestion = async (req, res) => {
     try {
@@ -13,6 +16,10 @@ const askLegalQuestion = async (req, res) => {
         if (!userQuery) {
             return res.status(400).json({ error: 'Question is required' });
         }
+
+        // Run emergency detection and relevant laws matching
+        const emergencyResult = checkEmergency(userQuery);
+        let matchedLaws = [];
 
         let category = reqCategory;
         let selectedStrategy = 'GeminiLLM';
@@ -41,6 +48,50 @@ Politely greet them if it is a greeting. If it is a technical, personal, or off-
 If this is a product defect or warranty issue, you might have rights under the Consumer Protection Act. Please let me know how I can assist you legally.`;
             }
             
+            // Save messages in ChatSession even for non-legal queries if user is logged in
+            let chatSession = null;
+            if (req.user) {
+                if (sessionId) {
+                    chatSession = await ChatSession.findOne({ _id: sessionId, userId: req.user._id });
+                }
+
+                if (chatSession) {
+                    chatSession.messages.push({ role: 'user', content: userQuery });
+                    chatSession.messages.push({
+                        role: 'ai',
+                        content: nonLegalMessage,
+                        queryId: null,
+                        strategy: 'None',
+                        feedback: 'none',
+                        laws: [],
+                        emergency: emergencyResult
+                    });
+                    chatSession.markModified('messages');
+                    await chatSession.save();
+                } else {
+                    const titleWords = userQuery.split(/\s+/).slice(0, 6).join(' ');
+                    const chatTitle = titleWords.length < userQuery.length ? `${titleWords}...` : titleWords;
+
+                    chatSession = new ChatSession({
+                        userId: req.user._id,
+                        title: chatTitle,
+                        messages: [
+                            { role: 'user', content: userQuery },
+                            {
+                                role: 'ai',
+                                content: nonLegalMessage,
+                                queryId: null,
+                                strategy: 'None',
+                                feedback: 'none',
+                                laws: [],
+                                emergency: emergencyResult
+                            }
+                        ]
+                    });
+                    await chatSession.save();
+                }
+            }
+
             return res.status(201).json({
                 success: true,
                 answer: nonLegalMessage,
@@ -48,7 +99,11 @@ If this is a product defect or warranty issue, you might have rights under the C
                 response: nonLegalMessage,
                 selectedStrategy: 'None',
                 confidenceScore: 1.0,
-                case: null
+                case: null,
+                sessionId: chatSession ? chatSession._id : null,
+                chatSession: chatSession,
+                laws: [],
+                emergency: emergencyResult
             });
         }
 
@@ -73,6 +128,9 @@ If this is a product defect or warranty issue, you might have rights under the C
             selectedStrategy = 'GeminiLLM';
             guidance = await getLegalGuidance(userQuery, history, language);
         }
+
+        // Fetch matched laws for legal queries
+        matchedLaws = await matchLaws(userQuery, language || 'English');
 
         // Save response to Case model if user is logged in
         let newCase = null;
@@ -109,7 +167,9 @@ If this is a product defect or warranty issue, you might have rights under the C
                     content: guidance,
                     queryId: newCase?._id,
                     strategy: selectedStrategy,
-                    feedback: 'none'
+                    feedback: 'none',
+                    laws: matchedLaws,
+                    emergency: emergencyResult
                 });
                 // Force mongoose to recognize the update to messages array
                 chatSession.markModified('messages');
@@ -130,7 +190,9 @@ If this is a product defect or warranty issue, you might have rights under the C
                             content: guidance,
                             queryId: newCase?._id,
                             strategy: selectedStrategy,
-                            feedback: 'none'
+                            feedback: 'none',
+                            laws: matchedLaws,
+                            emergency: emergencyResult
                         }
                     ]
                 });
@@ -147,7 +209,9 @@ If this is a product defect or warranty issue, you might have rights under the C
             confidenceScore: confidenceScore === Infinity ? 0.95 : confidenceScore,
             case: newCase,
             sessionId: chatSession ? chatSession._id : null,
-            chatSession: chatSession
+            chatSession: chatSession,
+            laws: matchedLaws,
+            emergency: emergencyResult
         });
     } catch (error) {
         console.error("Error in askLegalQuestion:", error);
@@ -203,9 +267,58 @@ const deleteChatSession = async (req, res) => {
     }
 };
 
+const findNearbyHelpController = async (req, res) => {
+    try {
+        const { latitude, longitude, city, state } = req.body;
+        let results = [];
+        if (latitude !== undefined && longitude !== undefined) {
+            results = await searchNearby(parseFloat(latitude), parseFloat(longitude));
+        } else if (city || state) {
+            results = await searchManual(city, state);
+        } else {
+            return res.status(400).json({ success: false, error: 'Location coordinates or city/state manual query required' });
+        }
+        res.json({ success: true, facilities: results });
+    } catch (error) {
+        console.error("Error in findNearbyHelpController:", error);
+        res.status(500).json({ success: false, error: 'Server error looking up nearby help' });
+    }
+};
+
+const getRelevantLawsController = async (req, res) => {
+    try {
+        const { query, language } = req.body;
+        if (!query) {
+            return res.status(400).json({ success: false, error: 'Query is required' });
+        }
+        const laws = await matchLaws(query, language || 'English');
+        res.json({ success: true, laws });
+    } catch (error) {
+        console.error("Error in getRelevantLawsController:", error);
+        res.status(500).json({ success: false, error: 'Server error retrieving laws' });
+    }
+};
+
+const detectEmergencyController = async (req, res) => {
+    try {
+        const { query } = req.body;
+        if (!query) {
+            return res.status(400).json({ success: false, error: 'Query is required' });
+        }
+        const result = checkEmergency(query);
+        res.json({ success: true, emergency: result });
+    } catch (error) {
+        console.error("Error in detectEmergencyController:", error);
+        res.status(500).json({ success: false, error: 'Server error detecting emergency' });
+    }
+};
+
 module.exports = {
     askLegalQuestion,
     getChatSessions,
     getChatSessionById,
-    deleteChatSession
+    deleteChatSession,
+    findNearbyHelpController,
+    getRelevantLawsController,
+    detectEmergencyController
 };

@@ -2,6 +2,8 @@ const { transcribeAudio } = require('../services/whisperService');
 const banditService = require('../services/banditService');
 const Case = require('../models/Case');
 const ChatSession = require('../models/ChatSession');
+const { matchLaws } = require('../services/lawService');
+const { checkEmergency } = require('../services/emergencyService');
 
 const handleVoiceUpload = async (req, res) => {
     try {
@@ -24,6 +26,9 @@ const handleVoiceUpload = async (req, res) => {
         const transcript = await transcribeAudio(req.file.path, language);
 
         // Check if the query is a legal query
+        const emergencyResult = checkEmergency(transcript);
+        let matchedLaws = [];
+
         const legalCheck = await banditService.isLegalQuery(transcript);
         if (!legalCheck) {
             let nonLegalMessage = "";
@@ -45,13 +50,60 @@ Politely greet them if it is a greeting. If it is a technical, personal, or off-
 If this is a product defect or warranty issue, you might have rights under the Consumer Protection Act. Please let me know how I can assist you legally.`;
             }
 
+            let chatSession = null;
+            if (req.user) {
+                if (sessionId) {
+                    chatSession = await ChatSession.findOne({ _id: sessionId, userId: req.user._id });
+                }
+
+                if (chatSession) {
+                    chatSession.messages.push({ role: 'user', content: transcript });
+                    chatSession.messages.push({
+                        role: 'ai',
+                        content: nonLegalMessage,
+                        queryId: null,
+                        strategy: 'None',
+                        feedback: 'none',
+                        laws: [],
+                        emergency: emergencyResult
+                    });
+                    chatSession.markModified('messages');
+                    await chatSession.save();
+                } else {
+                    const titleWords = transcript.split(/\s+/).slice(0, 6).join(' ');
+                    const chatTitle = titleWords.length < transcript.length ? `${titleWords}...` : titleWords;
+
+                    chatSession = new ChatSession({
+                        userId: req.user._id,
+                        title: chatTitle,
+                        messages: [
+                            { role: 'user', content: transcript },
+                            {
+                                role: 'ai',
+                                content: nonLegalMessage,
+                                queryId: null,
+                                strategy: 'None',
+                                feedback: 'none',
+                                laws: [],
+                                emergency: emergencyResult
+                            }
+                        ]
+                    });
+                    await chatSession.save();
+                }
+            }
+
             return res.json({
                 transcription: transcript,
                 transcript: transcript,
                 legalResponse: nonLegalMessage,
                 selectedStrategy: 'None',
                 confidenceScore: 1.0,
-                case: null
+                case: null,
+                sessionId: chatSession ? chatSession._id : null,
+                chatSession: chatSession,
+                laws: [],
+                emergency: emergencyResult
             });
         }
 
@@ -75,6 +127,9 @@ If this is a product defect or warranty issue, you might have rights under the C
             selectedStrategy = 'GeminiLLM';
             legalResponse = await getLegalGuidance(transcript, history, language);
         }
+
+        // Run laws matching
+        matchedLaws = await matchLaws(transcript, language || 'English');
 
         // Save to Case model
         let newCase = null;
@@ -112,7 +167,9 @@ If this is a product defect or warranty issue, you might have rights under the C
                     content: legalResponse,
                     queryId: newCase?._id,
                     strategy: selectedStrategy,
-                    feedback: 'none'
+                    feedback: 'none',
+                    laws: matchedLaws,
+                    emergency: emergencyResult
                 });
                 chatSession.markModified('messages');
                 await chatSession.save();
@@ -132,7 +189,9 @@ If this is a product defect or warranty issue, you might have rights under the C
                             content: legalResponse,
                             queryId: newCase?._id,
                             strategy: selectedStrategy,
-                            feedback: 'none'
+                            feedback: 'none',
+                            laws: matchedLaws,
+                            emergency: emergencyResult
                         }
                     ]
                 });
@@ -149,7 +208,9 @@ If this is a product defect or warranty issue, you might have rights under the C
             confidenceScore: confidenceScore === Infinity ? 0.95 : confidenceScore,
             case: newCase,
             sessionId: chatSession ? chatSession._id : null,
-            chatSession: chatSession
+            chatSession: chatSession,
+            laws: matchedLaws,
+            emergency: emergencyResult
         });
 
     } catch (error) {

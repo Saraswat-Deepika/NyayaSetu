@@ -12,16 +12,10 @@ const ARMS = ['RAG', 'GeminiLLM', 'LegalTemplate', 'SimilarCase'];
 const EXPLORATION_CONSTANT = 1.0;
 
 const MODELS_TO_TRY = [
-    'gemini-2.5-flash',
-    'gemini-2.0-flash',
-    'gemini-1.5-flash',
-    'gemini-2.5-pro',
-    'gemini-flash-latest',
-    'gemini-2.0-flash-lite',
-    'gemini-3.5-flash',
     'gemini-3.1-flash-lite',
+    'gemini-2.5-flash',
     'gemini-3-flash-preview',
-    'gemini-flash-lite-latest'
+    'gemini-flash-latest'
 ];
 
 /**
@@ -35,7 +29,7 @@ const generateContentWithFallback = async (prompt, systemInstruction = undefined
             const model = genAI.getGenerativeModel({ 
                 model: modelName,
                 ...(systemInstruction ? { systemInstruction } : {})
-            }, { timeout: 10000 });
+            }, { timeout: 15000 });
             const result = await model.generateContent(prompt);
             const text = result.response.text();
             if (text) {
@@ -329,6 +323,7 @@ This is a mock RAG response for testing.`;
 
     const context = docs.map((d, i) => `[Document ${i + 1}]:\n${d.pageContent}`).join('\n\n');
     const systemPrompt = `You are NyayaSetu, an AI Legal Assistant for India.
+CRITICAL: Every URL, website address, or link you mention MUST be strictly formatted as clickable markdown links, e.g. [Cyber Crime Portal](https://cybercrime.gov.in/) or [Women Helpline Portal](http://www.ncwhelpline.in/). Never write raw, unclickable links like "https://cybercrime.gov.in/" or "cybercrime.gov.in". Make sure the links are 100% correct official portals.
 You must answer the user's legal question strictly based on the provided document context.
 If the context does not contain enough information, provide standard legal information while mentioning you did not find direct document matches.
 
@@ -388,6 +383,7 @@ This is a mock response comparing past similar cases.`;
     const caseContext = similarCases.map((c, i) => `Case ${i+1}: ${c.title}\nDescription: ${c.description}\nAI Analysis: ${c.aiSummary}`).join('\n\n');
 
     const systemPrompt = `You are NyayaSetu, an AI Legal Assistant for India.
+CRITICAL: Every URL, website address, or link you mention MUST be strictly formatted as clickable markdown links, e.g. [Cyber Crime Portal](https://cybercrime.gov.in/) or [Women Helpline Portal](http://www.ncwhelpline.in/). Never write raw, unclickable links like "https://cybercrime.gov.in/" or "cybercrime.gov.in". Make sure the links are 100% correct official portals.
 Provide legal guidance on the user's situation by drawing comparison/reference from these past cases we processed:
 ${caseContext}
 
@@ -454,6 +450,7 @@ This is a customized template mock response for testing.`;
     }
 
     const systemPrompt = `You are NyayaSetu, an AI Legal Assistant for India.
+CRITICAL: Every URL, website address, or link you mention MUST be strictly formatted as clickable markdown links, e.g. [Cyber Crime Portal](https://cybercrime.gov.in/) or [Women Helpline Portal](http://www.ncwhelpline.in/). Never write raw, unclickable links like "https://cybercrime.gov.in/" or "cybercrime.gov.in". Make sure the links are 100% correct official portals.
 You must answer the user's legal question contextually, and also customize the following legal template for their specific situation:
 ---
 ${template}

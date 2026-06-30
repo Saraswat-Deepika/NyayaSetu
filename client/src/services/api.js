@@ -116,4 +116,19 @@ export const deleteChatSession = async (sessionId) => {
     return response.data;
 };
 
+export const findNearbyHelp = async (locationData) => {
+    const response = await api.post('/legal/nearby-help', locationData);
+    return response.data;
+};
+
+export const getRelevantLaws = async (query, language) => {
+    const response = await api.post('/legal/laws', { query, language });
+    return response.data;
+};
+
+export const detectEmergency = async (query) => {
+    const response = await api.post('/legal/detect-emergency', { query });
+    return response.data;
+};
+
 export default api;

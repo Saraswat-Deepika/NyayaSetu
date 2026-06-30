@@ -10,6 +10,10 @@ const app = express();
 // Connect to database
 connectDB();
 
+// Seed Database
+const seedDB = require('./config/seed');
+seedDB();
+
 // Middleware
 app.use(cors());
 app.use(helmet());
