@@ -27,21 +27,66 @@ app.get('/', (req, res) => {
     res.send('NyayaSetu API is running...');
 });
 
+app.get('/import-bnss', async (req, res) => {
+    try {
+        const fs = require('fs');
+        const path = require('path');
+        const mongoose = require('mongoose');
+        const jsonPath = path.join(__dirname, '../BNSS_Full_MongoDB.json');
+        const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+        const collectionName = data.mongo_collection || 'bnss_sections';
+        const collection = mongoose.connection.collection(collectionName);
+        await collection.deleteMany({ act: data.act });
+        const docsToInsert = data.chapters.map(ch => ({
+            act: data.act,
+            chapter_no: ch.chapter_no,
+            chapter_title: ch.chapter_title,
+            sections: ch.sections
+        }));
+        const result = await collection.insertMany(docsToInsert);
+        res.status(200).json({ message: `Successfully inserted ${result.insertedCount} chapters into ${collectionName}` });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/import-bsa', async (req, res) => {
+    try {
+        const fs = require('fs');
+        const path = require('path');
+        const mongoose = require('mongoose');
+        const jsonPath = path.join(__dirname, '../BSA_Full_MongoDB.json');
+        if (!fs.existsSync(jsonPath)) {
+            return res.status(404).json({ error: 'BSA_Full_MongoDB.json not found' });
+        }
+        const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+        const collectionName = data.mongo_collection || 'bsa_sections';
+        const collection = mongoose.connection.collection(collectionName);
+        await collection.deleteMany({ act: data.act });
+        const docsToInsert = data.chapters.map(ch => ({
+            act: data.act,
+            chapter_no: ch.chapter_no,
+            chapter_title: ch.chapter_title,
+            sections: ch.sections
+        }));
+        const result = await collection.insertMany(docsToInsert);
+        res.status(200).json({ message: `Successfully inserted ${result.insertedCount} chapters into ${collectionName}` });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Import Routes
-const authRoutes = require('./routes/auth');
-const voiceRoutes = require('./routes/voice');
-const translateRoutes = require('./routes/translate');
-const legalRoutes = require('./routes/legal');
-const documentsRoutes = require('./routes/documents');
-const banditRoutes = require('./routes/bandit');
+const authRoutes = require('./routes/authRoutes');
+const chatRoutes = require('./routes/chatRoutes');
+const ragRoutes = require('./routes/ragRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
 
 // Use Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/legal', legalRoutes);
-app.use('/api/documents', documentsRoutes);
-app.use('/api/voice', voiceRoutes);
-app.use('/api/translate', translateRoutes);
-app.use('/api', banditRoutes);
+app.use('/api', authRoutes);
+app.use('/api', chatRoutes);
+app.use('/api', ragRoutes);
+app.use('/api', uploadRoutes);
 
 const PORT = process.env.PORT || 5000;
 

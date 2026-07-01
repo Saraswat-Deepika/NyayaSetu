@@ -3,7 +3,7 @@ const BanditStat = require('../models/BanditStat');
 const QueryFeedback = require('../models/QueryFeedback');
 const Case = require('../models/Case');
 const ChatSession = require('../models/ChatSession');
-const { searchRelevantDocs } = require('./ragService');
+const { searchRelevantDocs } = require('./rag/retrievalService');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 

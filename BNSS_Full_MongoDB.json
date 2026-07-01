@@ -1,0 +1,2388 @@
+{
+  "act": "Bharatiya Nagarik Suraksha Sanhita, 2023",
+  "mongo_collection": "bnss_sections",
+  "chapters": [
+    {
+      "chapter_no": "I",
+      "chapter_title": "PRELIMINARY Suraksha Sanhita, 2023.",
+      "sections": [
+        {
+          "section_no": 1,
+          "title": "Short title, extent and commencement"
+        },
+        {
+          "section_no": 2,
+          "title": "Definitions"
+        },
+        {
+          "section_no": 3,
+          "title": "Construction of references"
+        },
+        {
+          "section_no": 4,
+          "title": "Trial of offences under Bharatiya Nyaya Sanhita, 2023 and other laws"
+        }
+      ]
+    },
+    {
+      "chapter_no": "II",
+      "chapter_title": "CONSTITUTION OF CRIMINAL COURTS AND OFFICES",
+      "sections": [
+        {
+          "section_no": 5,
+          "title": "Saving"
+        },
+        {
+          "section_no": 6,
+          "title": "Classes of Criminal Courts"
+        },
+        {
+          "section_no": 7,
+          "title": "Territorial divisions"
+        },
+        {
+          "section_no": 8,
+          "title": "Court of Session"
+        },
+        {
+          "section_no": 9,
+          "title": "Courts of Judicial Magistrates"
+        },
+        {
+          "section_no": 10,
+          "title": "Chief Judicial Magistrate and Additional Chief Judicial Magistrate, etc"
+        },
+        {
+          "section_no": 11,
+          "title": "Special Judicial Magistrates"
+        },
+        {
+          "section_no": 12,
+          "title": "Local Jurisdiction of Judicial Magistrates"
+        },
+        {
+          "section_no": 13,
+          "title": "Subordination of Judicial Magistrates"
+        },
+        {
+          "section_no": 14,
+          "title": "Executive Magistrates"
+        },
+        {
+          "section_no": 15,
+          "title": "Special Executive Magistrates"
+        },
+        {
+          "section_no": 16,
+          "title": "Local Jurisdiction of Executive"
+        },
+        {
+          "section_no": 17,
+          "title": "Subordination of Executive Magistrates"
+        },
+        {
+          "section_no": 18,
+          "title": "Public Prosecutors"
+        },
+        {
+          "section_no": 19,
+          "title": "Assistant Public Prosecutors"
+        }
+      ]
+    },
+    {
+      "chapter_no": "III",
+      "chapter_title": "POWER OF COURTS",
+      "sections": [
+        {
+          "section_no": 20,
+          "title": "Directorate of Prosecution"
+        },
+        {
+          "section_no": 21,
+          "title": "Courts by which offences are triable"
+        },
+        {
+          "section_no": 22,
+          "title": "Sentences which High Courts and Sessions Judges may pass"
+        },
+        {
+          "section_no": 23,
+          "title": "Sentences which Magistrates may pass"
+        },
+        {
+          "section_no": 24,
+          "title": "Sentence of imprisonment in default of fine"
+        },
+        {
+          "section_no": 25,
+          "title": "Sentence in cases of conviction of several offences at one trial"
+        },
+        {
+          "section_no": 26,
+          "title": "Mode of conferring powers"
+        },
+        {
+          "section_no": 27,
+          "title": "Powers of officers appointed"
+        },
+        {
+          "section_no": 28,
+          "title": "Withdrawal of powers"
+        }
+      ]
+    },
+    {
+      "chapter_no": "IV",
+      "chapter_title": "POWERS OF SUPERIOR OFFICERS OF POLICE AND AID TO THE MAGISTRATES AND THE POLICE",
+      "sections": [
+        {
+          "section_no": 29,
+          "title": "Powers of Judges and Magistrates exercisable by their successors-in office"
+        },
+        {
+          "section_no": 30,
+          "title": "Powers of superior officers of police"
+        },
+        {
+          "section_no": 31,
+          "title": "Public when to assist Magistrates and police"
+        },
+        {
+          "section_no": 32,
+          "title": "Aid to person, other than police officer, executing warrant"
+        },
+        {
+          "section_no": 33,
+          "title": "Public to give information of certain offences"
+        }
+      ]
+    },
+    {
+      "chapter_no": "V",
+      "chapter_title": "ARREST OF PERSONS",
+      "sections": [
+        {
+          "section_no": 34,
+          "title": "Duty of officers employed in connection with affairs of a village to make certain"
+        },
+        {
+          "section_no": 35,
+          "title": "When police may arrest without warrant"
+        },
+        {
+          "section_no": 36,
+          "title": "Procedure of arrest and duties of officer making arrest"
+        },
+        {
+          "section_no": 37,
+          "title": "Designated police officer"
+        },
+        {
+          "section_no": 38,
+          "title": "Right of arrested person to meet an advocate of his choice during interrogation"
+        },
+        {
+          "section_no": 39,
+          "title": "Arrest on refusal to give name and residence"
+        },
+        {
+          "section_no": 40,
+          "title": "Arrest by private person and procedure on such arrest"
+        },
+        {
+          "section_no": 41,
+          "title": "Arrest by Magistrate"
+        },
+        {
+          "section_no": 42,
+          "title": "Protection of members of Armed Forces from arrest"
+        },
+        {
+          "section_no": 43,
+          "title": "Arrest how made"
+        },
+        {
+          "section_no": 44,
+          "title": "Search of place entered by person sought to be arrested"
+        },
+        {
+          "section_no": 45,
+          "title": "Pursuit of offenders into other jurisdictions"
+        },
+        {
+          "section_no": 46,
+          "title": "No unnecessary restraint"
+        },
+        {
+          "section_no": 47,
+          "title": "Person arrested to be informed of grounds of arrest and of right to bail"
+        },
+        {
+          "section_no": 48,
+          "title": "Obligation of person making arrest to inform about arrest, etc., to relative or friend"
+        },
+        {
+          "section_no": 49,
+          "title": "Search of arrested person"
+        },
+        {
+          "section_no": 50,
+          "title": "Power to seize offensive weapons"
+        },
+        {
+          "section_no": 51,
+          "title": "Examination of accused by medical practitioner at request of police officer"
+        },
+        {
+          "section_no": 52,
+          "title": "Examination of person accused of rape by medical practitioner"
+        },
+        {
+          "section_no": 53,
+          "title": "Examination of arrested person by medical officer"
+        },
+        {
+          "section_no": 54,
+          "title": "Identification of person arrested"
+        },
+        {
+          "section_no": 55,
+          "title": "Procedure when police officer deputes subordinate to arrest without warrant"
+        },
+        {
+          "section_no": 56,
+          "title": "Health and safety of arrested person"
+        },
+        {
+          "section_no": 57,
+          "title": "Person arrested to be taken before Magistrate or officer in charge of police station"
+        },
+        {
+          "section_no": 58,
+          "title": "Person arrested not to be detained more than twenty-four hours"
+        },
+        {
+          "section_no": 59,
+          "title": "Police to report apprehensions"
+        },
+        {
+          "section_no": 60,
+          "title": "Discharge of person apprehended"
+        },
+        {
+          "section_no": 61,
+          "title": "Power, on escape, to pursue and retake"
+        }
+      ]
+    },
+    {
+      "chapter_no": "VI",
+      "chapter_title": "PROCESSES TO COMPEL APPEARANCE",
+      "sections": [
+        {
+          "section_no": 62,
+          "title": "Arrest to be made strictly according to Sanhita"
+        },
+        {
+          "section_no": 63,
+          "title": "Form of summons"
+        },
+        {
+          "section_no": 64,
+          "title": "Summons how served"
+        },
+        {
+          "section_no": 65,
+          "title": "Service of summons on corporate bodies, firms, and societies"
+        },
+        {
+          "section_no": 66,
+          "title": "Service when persons summoned cannot be found"
+        },
+        {
+          "section_no": 67,
+          "title": "Procedure when service cannot be effected as before provided"
+        },
+        {
+          "section_no": 68,
+          "title": "Service on Government servant"
+        },
+        {
+          "section_no": 69,
+          "title": "Service of summons outside local limits"
+        },
+        {
+          "section_no": 70,
+          "title": "Proof of service in such cases and when serving officer not present"
+        },
+        {
+          "section_no": 71,
+          "title": "Service of summons on witness"
+        },
+        {
+          "section_no": 72,
+          "title": "Form of warrant of arrest and duration"
+        },
+        {
+          "section_no": 73,
+          "title": "Power to direct security to be taken"
+        },
+        {
+          "section_no": 74,
+          "title": "Warrants to whom directed"
+        },
+        {
+          "section_no": 75,
+          "title": "Warrant may be directed to any person"
+        },
+        {
+          "section_no": 76,
+          "title": "Warrant directed to police officer"
+        },
+        {
+          "section_no": 77,
+          "title": "Notification of substance of warrant"
+        },
+        {
+          "section_no": 78,
+          "title": "Person arrested to be brought before Court without delay"
+        },
+        {
+          "section_no": 79,
+          "title": "Where warrant may be executed"
+        },
+        {
+          "section_no": 80,
+          "title": "Warrant forwarded for execution outside jurisdiction"
+        },
+        {
+          "section_no": 81,
+          "title": "Warrant directed to police officer for execution outside jurisdiction"
+        },
+        {
+          "section_no": 82,
+          "title": "Procedure on arrest of person against whom warrant issued"
+        },
+        {
+          "section_no": 83,
+          "title": "Procedure by Magistrate before whom such person arrested is brought"
+        },
+        {
+          "section_no": 84,
+          "title": "Proclamation for person absconding"
+        },
+        {
+          "section_no": 85,
+          "title": "Attachment of property of person absconding"
+        },
+        {
+          "section_no": 86,
+          "title": "Identification and attachment of property of proclaimed person"
+        },
+        {
+          "section_no": 87,
+          "title": "Claims and objections to attachment"
+        },
+        {
+          "section_no": 88,
+          "title": "Release, sale and restoration of attached property"
+        },
+        {
+          "section_no": 89,
+          "title": "Appeal from order rejecting application for restoration of attached property"
+        },
+        {
+          "section_no": 90,
+          "title": "Issue of warrant in lieu of, or in addition to, summons"
+        },
+        {
+          "section_no": 91,
+          "title": "Power to take bond or bail bond for appearance"
+        },
+        {
+          "section_no": 92,
+          "title": "Arrest on breach of bond or bail bond for appearance"
+        }
+      ]
+    },
+    {
+      "chapter_no": "VII",
+      "chapter_title": "PROCESSES TO COMPEL THE PRODUCTION OF THINGS",
+      "sections": [
+        {
+          "section_no": 93,
+          "title": "Provisions of this Chapter generally applicable to summons and warrants of arrest"
+        },
+        {
+          "section_no": 94,
+          "title": "Summons to produce document or other thing"
+        },
+        {
+          "section_no": 95,
+          "title": "Procedure as to letters"
+        },
+        {
+          "section_no": 96,
+          "title": "When search-warrant may be issued"
+        },
+        {
+          "section_no": 97,
+          "title": "Search of place suspected to contain stolen property, forged documents, etc"
+        },
+        {
+          "section_no": 98,
+          "title": "Power to declare certain publications forfeited and to issue search-warrants for"
+        },
+        {
+          "section_no": 99,
+          "title": "Application to High Court to set aside declaration of forfeiture"
+        },
+        {
+          "section_no": 100,
+          "title": "Search for persons wrongfully confined"
+        },
+        {
+          "section_no": 101,
+          "title": "Power to compel restoration of abducted females"
+        },
+        {
+          "section_no": 102,
+          "title": "Direction, etc., of search-warrants"
+        },
+        {
+          "section_no": 103,
+          "title": "Persons in charge of closed place to allow search"
+        },
+        {
+          "section_no": 104,
+          "title": "Disposal of things found in search beyond jurisdiction"
+        },
+        {
+          "section_no": 105,
+          "title": "Recording of search and seizure through audio-video electronic means"
+        },
+        {
+          "section_no": 106,
+          "title": "Power of police officer to seize certain property"
+        },
+        {
+          "section_no": 107,
+          "title": "Attachment, forfeiture or restoration of property"
+        },
+        {
+          "section_no": 108,
+          "title": "Magistrate may direct search in his presence"
+        },
+        {
+          "section_no": 109,
+          "title": "Power to impound document, etc., produced"
+        }
+      ]
+    },
+    {
+      "chapter_no": "VIII",
+      "chapter_title": "RECIPROCAL ARRANGEMENTS FOR ASSISTANCE IN CERTAIN MATTERS AND PROCEDURE FOR",
+      "sections": [
+        {
+          "section_no": 110,
+          "title": "Reciprocal arrangements regarding processes"
+        },
+        {
+          "section_no": 111,
+          "title": "Definitions"
+        },
+        {
+          "section_no": 112,
+          "title": "Letter of request to competent authority for investigation in a country or place outside"
+        },
+        {
+          "section_no": 113,
+          "title": "Letter of request from a country or place outside India to a Court or an authority for"
+        },
+        {
+          "section_no": 114,
+          "title": "Assistance in securing transfer of persons"
+        },
+        {
+          "section_no": 115,
+          "title": "Assistance in relation to orders of attachment or forfeiture of property"
+        },
+        {
+          "section_no": 116,
+          "title": "Identifying unlawfully acquired property"
+        },
+        {
+          "section_no": 117,
+          "title": "Seizure or attachment of property"
+        },
+        {
+          "section_no": 118,
+          "title": "Management of properties seized or forfeited under this Chapter"
+        },
+        {
+          "section_no": 119,
+          "title": "Notice of forfeiture of property"
+        },
+        {
+          "section_no": 120,
+          "title": "Forfeiture of property in certain cases"
+        },
+        {
+          "section_no": 121,
+          "title": "Fine in lieu of forfeiture"
+        },
+        {
+          "section_no": 122,
+          "title": "Certain transfers to be null and void"
+        },
+        {
+          "section_no": 123,
+          "title": "Procedure in respect of letter of request"
+        }
+      ]
+    },
+    {
+      "chapter_no": "IX",
+      "chapter_title": "SECURITY FOR KEEPING THE PEACE AND FOR GOOD BEHAVIOUR",
+      "sections": [
+        {
+          "section_no": 124,
+          "title": "Application of this Chapter"
+        },
+        {
+          "section_no": 125,
+          "title": "Security for keeping peace on conviction"
+        },
+        {
+          "section_no": 126,
+          "title": "Security for keeping peace in other cases"
+        },
+        {
+          "section_no": 127,
+          "title": "Security for good behaviour from persons disseminating certain matters"
+        },
+        {
+          "section_no": 128,
+          "title": "Security for good behaviour from suspected persons"
+        },
+        {
+          "section_no": 129,
+          "title": "Security for good behaviour from habitual offenders"
+        },
+        {
+          "section_no": 130,
+          "title": "Order to be made"
+        },
+        {
+          "section_no": 131,
+          "title": "Procedure in respect of person present in Court"
+        },
+        {
+          "section_no": 132,
+          "title": "Summons or warrant in case of person not so present"
+        },
+        {
+          "section_no": 133,
+          "title": "Copy of order to accompany summons or warrant"
+        },
+        {
+          "section_no": 134,
+          "title": "Power to dispense with personal attendance"
+        },
+        {
+          "section_no": 135,
+          "title": "Inquiry as to truth of information"
+        },
+        {
+          "section_no": 136,
+          "title": "Order to give security"
+        },
+        {
+          "section_no": 137,
+          "title": "Discharge of person informed against"
+        },
+        {
+          "section_no": 138,
+          "title": "Commencement of period for which security is required"
+        },
+        {
+          "section_no": 139,
+          "title": "Contents of bond"
+        },
+        {
+          "section_no": 140,
+          "title": "Power to reject sureties"
+        },
+        {
+          "section_no": 141,
+          "title": "Imprisonment in default of security"
+        }
+      ]
+    },
+    {
+      "chapter_no": "Chapter may be released without hazard to the community or to any other person, he may order such person",
+      "chapter_title": "Chapter may be released without hazard to the community or to any other person, he may order such person",
+      "sections": [
+        {
+          "section_no": 142,
+          "title": "Power to release persons imprisoned for failing to give security"
+        }
+      ]
+    },
+    {
+      "chapter_no": "X",
+      "chapter_title": "ORDER FOR MAINTENANCE OF WIVES, CHILDREN AND PARENTS",
+      "sections": [
+        {
+          "section_no": 143,
+          "title": "Security for unexpired period of bond"
+        },
+        {
+          "section_no": 144,
+          "title": "Order for maintenance of wives, children and parents"
+        },
+        {
+          "section_no": 145,
+          "title": "Procedure"
+        },
+        {
+          "section_no": 146,
+          "title": "Alteration in allowance"
+        }
+      ]
+    },
+    {
+      "chapter_no": "XI",
+      "chapter_title": "MAINTENANCE OF PUBLIC ORDER AND TRANQUILLITY",
+      "sections": [
+        {
+          "section_no": 147,
+          "title": "Enforcement of order of maintenance"
+        },
+        {
+          "section_no": 148,
+          "title": "Dispersal of assembly by use of civil force"
+        },
+        {
+          "section_no": 149,
+          "title": "Use of armed forces to disperse assembly"
+        },
+        {
+          "section_no": 150,
+          "title": "Power of certain armed force officers to disperse assembly"
+        },
+        {
+          "section_no": 151,
+          "title": "Protection against prosecution for acts done under sections 148, 149 and 150"
+        },
+        {
+          "section_no": 152,
+          "title": "Conditional order for removal of nuisance"
+        },
+        {
+          "section_no": 153,
+          "title": "Service or notification of order"
+        },
+        {
+          "section_no": 154,
+          "title": "Person to whom order is addressed to obey or show cause"
+        },
+        {
+          "section_no": 155,
+          "title": "Penalty for failure to comply with section 154"
+        },
+        {
+          "section_no": 156,
+          "title": "Procedure where existence of public right is denied"
+        },
+        {
+          "section_no": 157,
+          "title": "Procedure where person against whom order is made under section 152 appears to show"
+        },
+        {
+          "section_no": 158,
+          "title": "Power of Magistrate to direct local investigation and examination of an expert"
+        },
+        {
+          "section_no": 159,
+          "title": "Power of Magistrate to furnish written instructions, etc"
+        },
+        {
+          "section_no": 160,
+          "title": "Procedure on order being made absolute and consequences of disobedience"
+        },
+        {
+          "section_no": 161,
+          "title": "Injunction pending inquiry"
+        },
+        {
+          "section_no": 162,
+          "title": "Magistrate may prohibit repetition or Continuance of public nuisance"
+        },
+        {
+          "section_no": 163,
+          "title": "Power to issue order in urgent cases of nuisance or apprehended danger"
+        },
+        {
+          "section_no": 164,
+          "title": "Procedure where dispute concerning land or water is likely to cause breach of"
+        },
+        {
+          "section_no": 165,
+          "title": "Power to attach subject of dispute and to appoint receiver"
+        },
+        {
+          "section_no": 166,
+          "title": "Dispute concerning right of use of land or water"
+        }
+      ]
+    },
+    {
+      "chapter_no": "XII",
+      "chapter_title": "PREVENTIVE ACTION OF THE POLICE",
+      "sections": [
+        {
+          "section_no": 167,
+          "title": "Local inquiry"
+        },
+        {
+          "section_no": 168,
+          "title": "Police to prevent cognizable offences"
+        },
+        {
+          "section_no": 169,
+          "title": "Information of design to commit cognizable offences"
+        },
+        {
+          "section_no": 170,
+          "title": "Arrest to prevent commission of cognizable offences"
+        },
+        {
+          "section_no": 171,
+          "title": "Prevention of injury to public property"
+        }
+      ]
+    },
+    {
+      "chapter_no": "XIII",
+      "chapter_title": "INFORMATION TO THE POLICE AND THEIR POWERS TO INVESTIGATE",
+      "sections": [
+        {
+          "section_no": 172,
+          "title": "Persons bound to conform to lawful directions of police"
+        },
+        {
+          "section_no": 173,
+          "title": "Information in cognizable cases"
+        },
+        {
+          "section_no": 174,
+          "title": "Information as to non-cognizable cases and investigation of such cases"
+        },
+        {
+          "section_no": 175,
+          "title": "Police officer’s power to investigate cognizable case"
+        },
+        {
+          "section_no": 176,
+          "title": "Procedure for investigation"
+        },
+        {
+          "section_no": 177,
+          "title": "Report how submitted"
+        },
+        {
+          "section_no": 178,
+          "title": "Power to hold investigation or preliminary inquiry"
+        },
+        {
+          "section_no": 179,
+          "title": "Police officer's power to require attendance of witnesses"
+        },
+        {
+          "section_no": 180,
+          "title": "Examination of witnesses by police"
+        },
+        {
+          "section_no": 181,
+          "title": "Statements to police and use thereof"
+        },
+        {
+          "section_no": 182,
+          "title": "No inducement to be offered"
+        },
+        {
+          "section_no": 183,
+          "title": "Recording of confessions and statements"
+        },
+        {
+          "section_no": 184,
+          "title": "Medical examination of victim of rape"
+        },
+        {
+          "section_no": 185,
+          "title": "Search by police officer"
+        },
+        {
+          "section_no": 186,
+          "title": "When officer in charge of police station may require another to issue search-warrant"
+        },
+        {
+          "section_no": 187,
+          "title": "Procedure when investigation cannot be completed in twenty-four hours"
+        },
+        {
+          "section_no": 188,
+          "title": "Report of investigation by subordinate police officer"
+        },
+        {
+          "section_no": 189,
+          "title": "Release of accused when evidence deficient"
+        },
+        {
+          "section_no": 190,
+          "title": "Cases to be sent to Magistrate, when evidence is sufficient"
+        },
+        {
+          "section_no": 191,
+          "title": "Complainant and witnesses not to be required to accompany police officer and not to be"
+        },
+        {
+          "section_no": 192,
+          "title": "Diary of proceedings in investigation"
+        },
+        {
+          "section_no": 193,
+          "title": "Report of police officer on completion of investigation"
+        },
+        {
+          "section_no": 194,
+          "title": "Police to enquire and report on suicide, etc"
+        },
+        {
+          "section_no": 195,
+          "title": "Power to summon persons"
+        }
+      ]
+    },
+    {
+      "chapter_no": "XIV",
+      "chapter_title": "JURISDICTION OF THE CRIMINAL COURTS IN INQUIRIES AND TRIALS",
+      "sections": [
+        {
+          "section_no": 196,
+          "title": "Inquiry by Magistrate into cause of death"
+        },
+        {
+          "section_no": 197,
+          "title": "Ordinary place of inquiry and trial"
+        },
+        {
+          "section_no": 198,
+          "title": "Place of inquiry or trial"
+        },
+        {
+          "section_no": 199,
+          "title": "Offence triable where act is done or consequence ensues"
+        },
+        {
+          "section_no": 200,
+          "title": "Place of trial where act is an offence by reason of relation to other offence"
+        },
+        {
+          "section_no": 201,
+          "title": "Place of trial in case of certain offences"
+        },
+        {
+          "section_no": 202,
+          "title": "Offences committed by means of electronic communications, letters, etc"
+        },
+        {
+          "section_no": 203,
+          "title": "Offence committed on journey or voyage"
+        },
+        {
+          "section_no": 204,
+          "title": "Place of trial for offences triable together"
+        },
+        {
+          "section_no": 205,
+          "title": "Power to order cases to be tried in different sessions divisions"
+        },
+        {
+          "section_no": 206,
+          "title": "High Court to decide, in case of doubt, district where inquiry or trial shall take place"
+        },
+        {
+          "section_no": 207,
+          "title": "Power to issue summons or warrant for offence committed beyond local jurisdiction"
+        },
+        {
+          "section_no": 208,
+          "title": "Offence committed outside India"
+        }
+      ]
+    },
+    {
+      "chapter_no": "XV",
+      "chapter_title": "CONDITIONS REQUISITE FOR INITIATION OF PROCEEDINGS",
+      "sections": [
+        {
+          "section_no": 209,
+          "title": "Receipt of evidence relating to offences committed outside India"
+        },
+        {
+          "section_no": 210,
+          "title": "Cognizance of offences by Magistrate"
+        },
+        {
+          "section_no": 211,
+          "title": "Transfer on application of accused"
+        },
+        {
+          "section_no": 212,
+          "title": "Making over of cases to Magistrates"
+        },
+        {
+          "section_no": 213,
+          "title": "Cognizance of offences by Court of Session"
+        },
+        {
+          "section_no": 214,
+          "title": "Additional Sessions Judges to try cases made over to them"
+        },
+        {
+          "section_no": 215,
+          "title": "Prosecution for contempt of lawful authority of public servants, for offences against public"
+        },
+        {
+          "section_no": 216,
+          "title": "Procedure for witnesses in case of threatening, etc"
+        },
+        {
+          "section_no": 217,
+          "title": "Prosecution for offences against State and for criminal conspiracy to commit such"
+        },
+        {
+          "section_no": 218,
+          "title": "Prosecution of Judges and public servants"
+        },
+        {
+          "section_no": 219,
+          "title": "Prosecution for offences against marriage"
+        },
+        {
+          "section_no": 220,
+          "title": "Prosecution of offences under section 85 of Bharatiya Nyaya Sanhita, 2023"
+        },
+        {
+          "section_no": 221,
+          "title": "Cognizance of offence"
+        }
+      ]
+    },
+    {
+      "chapter_no": "XVI",
+      "chapter_title": "COMPLAINTS TO MAGISTRATES",
+      "sections": [
+        {
+          "section_no": 222,
+          "title": "Prosecution for defamation"
+        },
+        {
+          "section_no": 223,
+          "title": "Examination of complainant"
+        },
+        {
+          "section_no": 224,
+          "title": "Procedure by Magistrate not competent to take cognizance of case"
+        },
+        {
+          "section_no": 225,
+          "title": "Postponement of issue of process"
+        }
+      ]
+    },
+    {
+      "chapter_no": "XVII",
+      "chapter_title": "COMMENCEMENT OF PROCEEDINGS BEFORE MAGISTRATES",
+      "sections": [
+        {
+          "section_no": 226,
+          "title": "Dismissal of complaint"
+        },
+        {
+          "section_no": 227,
+          "title": "Issue of process"
+        },
+        {
+          "section_no": 228,
+          "title": "Magistrate may dispense with personal attendance of accused"
+        },
+        {
+          "section_no": 229,
+          "title": "Special summons in cases of petty offence"
+        },
+        {
+          "section_no": 230,
+          "title": "Supply to accused of copy of police report and other documents"
+        },
+        {
+          "section_no": 231,
+          "title": "Supply of copies of statements and documents to accused in other cases triable by Court of"
+        },
+        {
+          "section_no": 232,
+          "title": "Commitment of case to Court of Session when offence is triable exclusively by it"
+        }
+      ]
+    },
+    {
+      "chapter_no": "XVIII",
+      "chapter_title": "THE CHARGE",
+      "sections": [
+        {
+          "section_no": 233,
+          "title": "Procedure to be followed when there is a complaint case and police investigation in respect"
+        },
+        {
+          "section_no": 234,
+          "title": "Contents of charge"
+        },
+        {
+          "section_no": 235,
+          "title": "Particulars as to time, place and person"
+        },
+        {
+          "section_no": 236,
+          "title": "When manner of committing offence must be stated"
+        },
+        {
+          "section_no": 237,
+          "title": "Words in charge taken in sense of law under which offence is punishable"
+        },
+        {
+          "section_no": 238,
+          "title": "Effect of errors"
+        },
+        {
+          "section_no": 239,
+          "title": "Court may alter charge"
+        },
+        {
+          "section_no": 240,
+          "title": "Recall of witnesses when charge altered"
+        },
+        {
+          "section_no": 241,
+          "title": "Separate charges for distinct offences"
+        },
+        {
+          "section_no": 242,
+          "title": "Offences of same kind within year may be charged together"
+        },
+        {
+          "section_no": 243,
+          "title": "Trial for more than one offence"
+        },
+        {
+          "section_no": 244,
+          "title": "Where it is doubtful what offence has been committed"
+        },
+        {
+          "section_no": 245,
+          "title": "When offence proved included in offence charged"
+        },
+        {
+          "section_no": 246,
+          "title": "What persons may be charged jointly"
+        }
+      ]
+    },
+    {
+      "chapter_no": "XIX",
+      "chapter_title": "TRIAL BEFORE A COURT OF SESSION",
+      "sections": [
+        {
+          "section_no": 247,
+          "title": "Withdrawal of remaining charges on conviction on one of several charges"
+        },
+        {
+          "section_no": 248,
+          "title": "Trial to be conducted by Public Prosecutor"
+        },
+        {
+          "section_no": 249,
+          "title": "Opening case for prosecution"
+        },
+        {
+          "section_no": 250,
+          "title": "Discharge"
+        },
+        {
+          "section_no": 251,
+          "title": "Framing of charge"
+        },
+        {
+          "section_no": 252,
+          "title": "Conviction on plea of guilty"
+        },
+        {
+          "section_no": 253,
+          "title": "Date for prosecution evidence"
+        },
+        {
+          "section_no": 254,
+          "title": "Evidence for prosecution"
+        },
+        {
+          "section_no": 255,
+          "title": "Acquittal"
+        },
+        {
+          "section_no": 256,
+          "title": "Entering upon defence"
+        },
+        {
+          "section_no": 257,
+          "title": "Arguments"
+        },
+        {
+          "section_no": 258,
+          "title": "Judgment of acquittal or conviction"
+        },
+        {
+          "section_no": 259,
+          "title": "Previous conviction"
+        }
+      ]
+    },
+    {
+      "chapter_no": "XX",
+      "chapter_title": "TRIAL OF WARRANT-CASES BY MAGISTRATES",
+      "sections": [
+        {
+          "section_no": 260,
+          "title": "Procedure in cases instituted under sub-section (2) of section 222"
+        },
+        {
+          "section_no": 261,
+          "title": "Compliance with section 230"
+        },
+        {
+          "section_no": 262,
+          "title": "When accused shall be discharged"
+        },
+        {
+          "section_no": 263,
+          "title": "Framing of charge"
+        },
+        {
+          "section_no": 264,
+          "title": "Conviction on plea of guilty"
+        },
+        {
+          "section_no": 265,
+          "title": "Evidence for prosecution"
+        },
+        {
+          "section_no": 266,
+          "title": "Evidence for defence"
+        },
+        {
+          "section_no": 267,
+          "title": "Evidence for prosecution"
+        },
+        {
+          "section_no": 268,
+          "title": "When accused shall be discharged"
+        },
+        {
+          "section_no": 269,
+          "title": "Procedure where accused is not discharged"
+        },
+        {
+          "section_no": 270,
+          "title": "Evidence for defence"
+        },
+        {
+          "section_no": 271,
+          "title": "Acquittal or conviction"
+        },
+        {
+          "section_no": 272,
+          "title": "Absence of complainant"
+        }
+      ]
+    },
+    {
+      "chapter_no": "XXI",
+      "chapter_title": "TRIAL OF SUMMONS-CASES BY MAGISTRATES",
+      "sections": [
+        {
+          "section_no": 273,
+          "title": "Compensation for accusation without reasonable cause"
+        },
+        {
+          "section_no": 274,
+          "title": "Substance of accusation to be stated"
+        },
+        {
+          "section_no": 275,
+          "title": "Conviction on plea of guilty"
+        },
+        {
+          "section_no": 276,
+          "title": "Conviction on plea of guilty in absence of accused in petty cases"
+        },
+        {
+          "section_no": 277,
+          "title": "Procedure when not convicted"
+        },
+        {
+          "section_no": 278,
+          "title": "Acquittal or conviction"
+        },
+        {
+          "section_no": 279,
+          "title": "Non-appearance or death of complainant"
+        },
+        {
+          "section_no": 280,
+          "title": "Withdrawal of complaint"
+        },
+        {
+          "section_no": 281,
+          "title": "Power to stop proceedings in certain cases"
+        }
+      ]
+    },
+    {
+      "chapter_no": "XXII",
+      "chapter_title": "SUMMARY TRIALS",
+      "sections": [
+        {
+          "section_no": 282,
+          "title": "Power of Court to convert summonscases into warrant-cases"
+        },
+        {
+          "section_no": 283,
+          "title": "Power to try summarily"
+        },
+        {
+          "section_no": 284,
+          "title": "Summary trial by Magistrate of second class"
+        },
+        {
+          "section_no": 285,
+          "title": "Procedure for summary trials"
+        },
+        {
+          "section_no": 286,
+          "title": "Record in summary trials"
+        },
+        {
+          "section_no": 287,
+          "title": "Judgment in cases tried summarily"
+        }
+      ]
+    },
+    {
+      "chapter_no": "XXIII",
+      "chapter_title": "PLEA BARGAINING",
+      "sections": [
+        {
+          "section_no": 288,
+          "title": "Language of record and judgment"
+        },
+        {
+          "section_no": 289,
+          "title": "Application of Chapter"
+        },
+        {
+          "section_no": 290,
+          "title": "Application for plea bargaining"
+        },
+        {
+          "section_no": 291,
+          "title": "Guidelines for mutually satisfactory disposition"
+        },
+        {
+          "section_no": 292,
+          "title": "Report of mutually satisfactory disposition to be submitted before Court"
+        },
+        {
+          "section_no": 293,
+          "title": "Disposal of case"
+        },
+        {
+          "section_no": 294,
+          "title": "Judgment of Court"
+        },
+        {
+          "section_no": 295,
+          "title": "Finality of judgment"
+        },
+        {
+          "section_no": 296,
+          "title": "Power of Court in plea bargaining"
+        },
+        {
+          "section_no": 297,
+          "title": "Period of detention undergone by accused to be set off against sentence of imprisonment"
+        },
+        {
+          "section_no": 298,
+          "title": "Savings"
+        },
+        {
+          "section_no": 299,
+          "title": "Statements of accused not to be used"
+        }
+      ]
+    },
+    {
+      "chapter_no": "XXIV",
+      "chapter_title": "ATTENDANCE OF PERSONS CONFINED OR DETAINED IN PRISONS",
+      "sections": [
+        {
+          "section_no": 300,
+          "title": "Non-application of Chapter"
+        },
+        {
+          "section_no": 301,
+          "title": "Definitions"
+        },
+        {
+          "section_no": 302,
+          "title": "Power to require attendance of prisoners"
+        },
+        {
+          "section_no": 303,
+          "title": "Power of State Government or Central Government to exclude certain persons from"
+        },
+        {
+          "section_no": 304,
+          "title": "Officer in charge of prison to abstain from carrying out order in certain"
+        },
+        {
+          "section_no": 305,
+          "title": "Prisoner to be brought to Court in custody"
+        }
+      ]
+    },
+    {
+      "chapter_no": "XXV",
+      "chapter_title": "EVIDENCE IN INQUIRIES AND TRIALS",
+      "sections": [
+        {
+          "section_no": 306,
+          "title": "Power to issue commission for examination of witness in prison"
+        },
+        {
+          "section_no": 307,
+          "title": "Language of Courts"
+        }
+      ]
+    },
+    {
+      "chapter_no": "Chapter IX has been commenced under this Sanhita.",
+      "chapter_title": "Chapter IX has been commenced under this Sanhita.",
+      "sections": [
+        {
+          "section_no": 308,
+          "title": "Evidence to be taken in presence of accused"
+        },
+        {
+          "section_no": 309,
+          "title": "Record in summonscases and inquiries"
+        },
+        {
+          "section_no": 310,
+          "title": "Record in warrant-cases"
+        },
+        {
+          "section_no": 311,
+          "title": "Record in trial before Court of Session"
+        },
+        {
+          "section_no": 312,
+          "title": "Language of record of evidence"
+        },
+        {
+          "section_no": 313,
+          "title": "Procedure in regard to such evidence when completed"
+        },
+        {
+          "section_no": 314,
+          "title": "Interpretation of evidence to accused or his advocate"
+        },
+        {
+          "section_no": 315,
+          "title": "Remarks respecting demeanour of witness"
+        },
+        {
+          "section_no": 316,
+          "title": "Record of examination of accused"
+        },
+        {
+          "section_no": 317,
+          "title": "Interpreter to be bound to interpret truthfully"
+        },
+        {
+          "section_no": 318,
+          "title": "Record in High Court"
+        },
+        {
+          "section_no": 319,
+          "title": "When attendance of witness may be dispensed with and commission issued"
+        },
+        {
+          "section_no": 320,
+          "title": "Commission to whom to be issued"
+        },
+        {
+          "section_no": 321,
+          "title": "Execution of commissions"
+        },
+        {
+          "section_no": 322,
+          "title": "Parties may examine witnesses"
+        },
+        {
+          "section_no": 323,
+          "title": "Return of commission"
+        },
+        {
+          "section_no": 324,
+          "title": "Adjournment of proceeding"
+        },
+        {
+          "section_no": 325,
+          "title": "Execution of foreign commissions"
+        },
+        {
+          "section_no": 326,
+          "title": "Deposition of medical witness"
+        },
+        {
+          "section_no": 327,
+          "title": "Identification report of Magistrate"
+        },
+        {
+          "section_no": 328,
+          "title": "Evidence of officers of Mint"
+        },
+        {
+          "section_no": 329,
+          "title": "Reports of certain Government scientific experts"
+        },
+        {
+          "section_no": 330,
+          "title": "No formal proof of certain documents"
+        },
+        {
+          "section_no": 331,
+          "title": "Affidavit in proof of conduct of public servants"
+        },
+        {
+          "section_no": 332,
+          "title": "Evidence of formal character on affidavit"
+        },
+        {
+          "section_no": 333,
+          "title": "Authorities before whom affidavits may be sworn"
+        },
+        {
+          "section_no": 334,
+          "title": "Previous conviction or acquittal how proved"
+        },
+        {
+          "section_no": 335,
+          "title": "Record of evidence in absence of accused"
+        }
+      ]
+    },
+    {
+      "chapter_no": "XXVI",
+      "chapter_title": "GENERAL PROVISIONS AS TO INQUIRIES AND TRIALS",
+      "sections": [
+        {
+          "section_no": 336,
+          "title": "Evidence of public servants, experts, police officers in certain cases"
+        },
+        {
+          "section_no": 337,
+          "title": "Person once convicted or acquitted not to be tried for same offence"
+        },
+        {
+          "section_no": 338,
+          "title": "Appearance by Public Prosecutors"
+        },
+        {
+          "section_no": 339,
+          "title": "Permission to conduct prosecution"
+        },
+        {
+          "section_no": 340,
+          "title": "Right of person against whom proceedings are instituted to be defended"
+        },
+        {
+          "section_no": 341,
+          "title": "Legal aid to accused at State expense in certain cases"
+        },
+        {
+          "section_no": 342,
+          "title": "Procedure when corporation or registered society is an accused"
+        },
+        {
+          "section_no": 343,
+          "title": "Tender of pardon to accomplice"
+        },
+        {
+          "section_no": 344,
+          "title": "Power to direct tender of pardon"
+        },
+        {
+          "section_no": 345,
+          "title": "Trial of person not complying with conditions of pardon"
+        },
+        {
+          "section_no": 346,
+          "title": "Power to postpone or adjourn proceedings"
+        },
+        {
+          "section_no": 347,
+          "title": "Local inspection"
+        },
+        {
+          "section_no": 348,
+          "title": "Power to summon material witness, or examine person present"
+        },
+        {
+          "section_no": 349,
+          "title": "Power of Magistrate to order person to give specimen signatures or handwriting, etc"
+        },
+        {
+          "section_no": 350,
+          "title": "Expenses of complainants and witnesses"
+        },
+        {
+          "section_no": 351,
+          "title": "Power to examine accused"
+        },
+        {
+          "section_no": 352,
+          "title": "Oral arguments and memorandum of arguments"
+        },
+        {
+          "section_no": 353,
+          "title": "Accused person to be competent witness"
+        },
+        {
+          "section_no": 354,
+          "title": "No influence to be used to induce disclosure"
+        },
+        {
+          "section_no": 355,
+          "title": "Provision for inquiries and trial being held in absence of accused in certain cases"
+        },
+        {
+          "section_no": 356,
+          "title": "Inquiry, trial or judgment in absentia of proclaimed offender"
+        },
+        {
+          "section_no": 357,
+          "title": "Procedure where accused does not understand proceedings"
+        },
+        {
+          "section_no": 358,
+          "title": "Power to proceed against other persons appearing to be guilty of offence"
+        },
+        {
+          "section_no": 359,
+          "title": "Compounding of offences"
+        },
+        {
+          "section_no": 360,
+          "title": "Withdrawal from prosecution"
+        },
+        {
+          "section_no": 361,
+          "title": "Procedure in cases which Magistrate cannot dispose of"
+        },
+        {
+          "section_no": 362,
+          "title": "Procedure when after commencement of inquiry or trial, Magistrate finds case should be"
+        }
+      ]
+    },
+    {
+      "chapter_no": "Chapter XVII of the Bharatiya Nyaya Sanhita, 2023 (45 of 2023), with imprisonment for a term of three",
+      "chapter_title": "Chapter XVII of the Bharatiya Nyaya Sanhita, 2023 (45 of 2023), with imprisonment for a term of three",
+      "sections": [
+        {
+          "section_no": 363,
+          "title": "Trial of persons previously convicted of offences against coinage, stamp-law or"
+        },
+        {
+          "section_no": 364,
+          "title": "Procedure when Magistrate cannot pass sentence sufficiently severe"
+        },
+        {
+          "section_no": 365,
+          "title": "Conviction or commitment on evidence partly recorded by one Magistrate and partly by"
+        }
+      ]
+    },
+    {
+      "chapter_no": "XXVII",
+      "chapter_title": "PROVISIONS AS TO ACCUSED PERSONS OF UNSOUND MIND",
+      "sections": [
+        {
+          "section_no": 366,
+          "title": "Court to be open"
+        },
+        {
+          "section_no": 367,
+          "title": "Procedure in case of accused being person of unsound mind"
+        },
+        {
+          "section_no": 368,
+          "title": "Procedure in case of person of unsound mind tried before Court"
+        },
+        {
+          "section_no": 369,
+          "title": "Release of person of unsound mind pending investigation or trial"
+        },
+        {
+          "section_no": 370,
+          "title": "Resumption of inquiry or trial"
+        },
+        {
+          "section_no": 371,
+          "title": "Procedure on accused appearing before Magistrate or Court"
+        },
+        {
+          "section_no": 372,
+          "title": "When accused appears to have been of sound mind"
+        },
+        {
+          "section_no": 373,
+          "title": "Judgment of acquittal on ground of unsoundness of mind"
+        },
+        {
+          "section_no": 374,
+          "title": "Person acquitted on ground of unsoundness of mind to be detained in safe custody"
+        },
+        {
+          "section_no": 375,
+          "title": "Power of State Government to empower officer in charge to discharge"
+        },
+        {
+          "section_no": 376,
+          "title": "Procedure where prisoner of unsound mind is reported capable of making his defence"
+        },
+        {
+          "section_no": 377,
+          "title": "Procedure where person of unsound mind detained is declared fit to be released"
+        }
+      ]
+    },
+    {
+      "chapter_no": "XXVIII",
+      "chapter_title": "PROVISIONS AS TO OFFENCES AFFECTING THE ADMINISTRATION OF JUSTICE",
+      "sections": [
+        {
+          "section_no": 378,
+          "title": "Delivery of person of unsound mind to care of relative or friend"
+        },
+        {
+          "section_no": 379,
+          "title": "Procedure in cases mentioned in section 215"
+        },
+        {
+          "section_no": 380,
+          "title": "Appeal"
+        },
+        {
+          "section_no": 381,
+          "title": "Power to order costs"
+        },
+        {
+          "section_no": 382,
+          "title": "Procedure of Magistrate taking cognizance"
+        },
+        {
+          "section_no": 383,
+          "title": "Summary procedure for trial for giving false evidence"
+        },
+        {
+          "section_no": 384,
+          "title": "Procedure in certain cases of contempt"
+        },
+        {
+          "section_no": 385,
+          "title": "Procedure where Court considers that case should not be dealt with under"
+        },
+        {
+          "section_no": 386,
+          "title": "When Registrar or Sub-Registrar to be deemed a Civil Court"
+        },
+        {
+          "section_no": 387,
+          "title": "Discharge of offender on submission of apology"
+        },
+        {
+          "section_no": 388,
+          "title": "Imprisonment or committal of person refusing to answer or produce document"
+        },
+        {
+          "section_no": 389,
+          "title": "Summary procedure for punishment for non-attendance by a witness in obedience to"
+        },
+        {
+          "section_no": 390,
+          "title": "Appeals from convictions under sections 383, 384, 388 and 389"
+        }
+      ]
+    },
+    {
+      "chapter_no": "XXIX",
+      "chapter_title": "THE JUDGMENT",
+      "sections": [
+        {
+          "section_no": 391,
+          "title": "Certain Judges and Magistrates not to try certain offences when committed before"
+        },
+        {
+          "section_no": 392,
+          "title": "Judgment"
+        },
+        {
+          "section_no": 393,
+          "title": "Language and contents of judgment"
+        },
+        {
+          "section_no": 394,
+          "title": "Order for notifying address of previously convicted offender"
+        },
+        {
+          "section_no": 395,
+          "title": "Order to pay compensation"
+        },
+        {
+          "section_no": 396,
+          "title": "Victim compensation scheme"
+        },
+        {
+          "section_no": 397,
+          "title": "Treatment of victims"
+        },
+        {
+          "section_no": 398,
+          "title": "Witness protection scheme"
+        },
+        {
+          "section_no": 399,
+          "title": "Compensation to persons groundlessly arrested"
+        },
+        {
+          "section_no": 400,
+          "title": "Order to pay costs in non-cognizable cases"
+        },
+        {
+          "section_no": 401,
+          "title": "Order to release on probation of good conduct or after admonition"
+        },
+        {
+          "section_no": 402,
+          "title": "Special reasons to be recorded in certain cases"
+        },
+        {
+          "section_no": 403,
+          "title": "Court not to alter judgment"
+        },
+        {
+          "section_no": 404,
+          "title": "Copy of judgment to be given to accused and other persons"
+        },
+        {
+          "section_no": 405,
+          "title": "Judgment when to be translated"
+        }
+      ]
+    },
+    {
+      "chapter_no": "XXX",
+      "chapter_title": "SUBMISSION OF DEATH SENTENCES FOR CONFIRMATION",
+      "sections": [
+        {
+          "section_no": 406,
+          "title": "Court of Session to send copy of finding and sentence to District Magistrate"
+        },
+        {
+          "section_no": 407,
+          "title": "Sentence of death to be submitted by Court of Session for confirmation"
+        },
+        {
+          "section_no": 408,
+          "title": "Power to direct further inquiry to be made or additional evidence to be taken"
+        },
+        {
+          "section_no": 409,
+          "title": "Power of High Court to confirm sentence or annul conviction"
+        },
+        {
+          "section_no": 410,
+          "title": "Confirmation or new sentence to be signed by two Judges"
+        },
+        {
+          "section_no": 411,
+          "title": "Procedure in case of difference of opinion"
+        }
+      ]
+    },
+    {
+      "chapter_no": "XXXI",
+      "chapter_title": "APPEALS",
+      "sections": [
+        {
+          "section_no": 412,
+          "title": "Procedure in cases submitted to High Court for confirmation"
+        },
+        {
+          "section_no": 413,
+          "title": "No appeal to lie unless otherwise provided"
+        },
+        {
+          "section_no": 414,
+          "title": "Appeal from orders requiring security or refusal to accept or rejecting surety for keeping"
+        },
+        {
+          "section_no": 415,
+          "title": "Appeals from convictions"
+        },
+        {
+          "section_no": 416,
+          "title": "No appeal in certain cases when accused pleads guilty"
+        },
+        {
+          "section_no": 417,
+          "title": "No appeal in petty cases"
+        },
+        {
+          "section_no": 418,
+          "title": "Appeal by State Government against sentence"
+        },
+        {
+          "section_no": 419,
+          "title": "Appeal in case of acquittal"
+        },
+        {
+          "section_no": 420,
+          "title": "Appeal against conviction by High Court in certain cases"
+        },
+        {
+          "section_no": 421,
+          "title": "Special right of appeal in certain cases"
+        },
+        {
+          "section_no": 422,
+          "title": "Appeal to Court of Session how heard"
+        },
+        {
+          "section_no": 423,
+          "title": "Petition of appeal"
+        },
+        {
+          "section_no": 424,
+          "title": "Procedure when appellant in jail"
+        },
+        {
+          "section_no": 425,
+          "title": "Summary dismissal of appeal"
+        },
+        {
+          "section_no": 426,
+          "title": "Procedure for hearing appeals not dismissed summarily"
+        },
+        {
+          "section_no": 427,
+          "title": "Powers of Appellate Court"
+        },
+        {
+          "section_no": 428,
+          "title": "Judgments of subordinate Appellate Court"
+        },
+        {
+          "section_no": 429,
+          "title": "Order of High Court on appeal to be certified to lower Court"
+        },
+        {
+          "section_no": 430,
+          "title": "Suspension of sentence pending appeal; release of appellant on bail"
+        },
+        {
+          "section_no": 431,
+          "title": "Arrest of accused in appeal from acquittal"
+        },
+        {
+          "section_no": 432,
+          "title": "Appellate Court may take further evidence or direct it to be taken"
+        }
+      ]
+    },
+    {
+      "chapter_no": "Chapter is heard by a High Court before a Bench of Judges and they are divided in opinion, the appeal, with",
+      "chapter_title": "Chapter is heard by a High Court before a Bench of Judges and they are divided in opinion, the appeal, with",
+      "sections": [
+        {
+          "section_no": 433,
+          "title": "Procedure where Judges of Court of appeal are equally divided"
+        },
+        {
+          "section_no": 434,
+          "title": "Finality of judgments and orders on appeal"
+        }
+      ]
+    },
+    {
+      "chapter_no": "XXXII",
+      "chapter_title": "REFERENCE AND REVISION",
+      "sections": [
+        {
+          "section_no": 435,
+          "title": "Abatement of appeals"
+        },
+        {
+          "section_no": 436,
+          "title": "Reference to High Court"
+        },
+        {
+          "section_no": 437,
+          "title": "Disposal of case according to decision of High Court"
+        },
+        {
+          "section_no": 438,
+          "title": "Calling for records to exercise powers of revision"
+        },
+        {
+          "section_no": 439,
+          "title": "Power to order inquiry"
+        },
+        {
+          "section_no": 440,
+          "title": "Sessions Judge's powers of revision"
+        },
+        {
+          "section_no": 441,
+          "title": "Power of Additional Sessions Judge"
+        },
+        {
+          "section_no": 442,
+          "title": "High Court's powers of revision"
+        },
+        {
+          "section_no": 443,
+          "title": "Power of High Court to withdraw or transfer revision cases"
+        },
+        {
+          "section_no": 444,
+          "title": "Option of Court to hear parties"
+        }
+      ]
+    },
+    {
+      "chapter_no": "XXXIII",
+      "chapter_title": "TRANSFER OF CRIMINAL CASES",
+      "sections": [
+        {
+          "section_no": 445,
+          "title": "High Court's order to be certified to lower Court"
+        },
+        {
+          "section_no": 446,
+          "title": "Power of Supreme Court to transfer cases and appeals"
+        },
+        {
+          "section_no": 447,
+          "title": "Power of High Court to transfer cases and appeals"
+        },
+        {
+          "section_no": 448,
+          "title": "Power of Sessions Judge to transfer cases and appeals"
+        },
+        {
+          "section_no": 449,
+          "title": "Withdrawal of cases and appeals by Sessions Judges"
+        },
+        {
+          "section_no": 450,
+          "title": "Withdrawal of cases by Judicial Magistrates"
+        },
+        {
+          "section_no": 451,
+          "title": "Making over or withdrawal of cases by Executive Magistrates"
+        }
+      ]
+    },
+    {
+      "chapter_no": "XXXIV",
+      "chapter_title": "EXECUTION, SUSPENSION, REMISSION AND COMMUTATION OF SENTENCES",
+      "sections": [
+        {
+          "section_no": 452,
+          "title": "Reasons to be recorded"
+        },
+        {
+          "section_no": 453,
+          "title": "Execution of order passed under section 409"
+        },
+        {
+          "section_no": 454,
+          "title": "Execution of sentence of death passed by High Court"
+        },
+        {
+          "section_no": 455,
+          "title": "Postponement of execution of sentence of death in case of appeal to Supreme"
+        },
+        {
+          "section_no": 456,
+          "title": "Commutation of sentence of death on pregnant woman"
+        },
+        {
+          "section_no": 457,
+          "title": "Power to appoint place of imprisonment"
+        },
+        {
+          "section_no": 458,
+          "title": "Execution of sentence of imprisonment"
+        },
+        {
+          "section_no": 459,
+          "title": "Direction of warrant for execution"
+        },
+        {
+          "section_no": 460,
+          "title": "Warrant with whom to be lodged"
+        },
+        {
+          "section_no": 461,
+          "title": "Warrant for levy of fine"
+        },
+        {
+          "section_no": 462,
+          "title": "Effect of such warrant"
+        },
+        {
+          "section_no": 463,
+          "title": "Warrant for levy of fine issued by a Court in any territory to which this Sanhita does not"
+        },
+        {
+          "section_no": 464,
+          "title": "Suspension of execution of sentence of imprisonment"
+        },
+        {
+          "section_no": 465,
+          "title": "Who may issue warrant"
+        },
+        {
+          "section_no": 466,
+          "title": "Sentence on escaped convict when to take effect"
+        },
+        {
+          "section_no": 467,
+          "title": "Sentence on offender already sentenced for another offence"
+        },
+        {
+          "section_no": 468,
+          "title": "Period of detention undergone by accused to be set off against sentence of imprisonment"
+        },
+        {
+          "section_no": 469,
+          "title": "Saving"
+        },
+        {
+          "section_no": 470,
+          "title": "Return of warrant on execution of sentence"
+        },
+        {
+          "section_no": 471,
+          "title": "Money ordered to be paid recoverable as a fine"
+        },
+        {
+          "section_no": 472,
+          "title": "Mercy petition in death sentence cases"
+        },
+        {
+          "section_no": 473,
+          "title": "Power to suspend or remit sentences"
+        },
+        {
+          "section_no": 474,
+          "title": "Power to commute sentence"
+        },
+        {
+          "section_no": 475,
+          "title": "Restriction on powers of remission or commutation in certain cases"
+        },
+        {
+          "section_no": 476,
+          "title": "Concurrent power of Central Government in case of death sentences"
+        }
+      ]
+    },
+    {
+      "chapter_no": "XXXV",
+      "chapter_title": "PROVISIONS AS TO BAIL AND BONDS",
+      "sections": [
+        {
+          "section_no": 477,
+          "title": "State Government to act after concurrence with Central Government in certain cases"
+        },
+        {
+          "section_no": 478,
+          "title": "In what cases bail to be taken"
+        },
+        {
+          "section_no": 479,
+          "title": "Maximum period for which under trial prisoner can be detained"
+        },
+        {
+          "section_no": 480,
+          "title": "When bail may be taken in case of non-bailable offence"
+        },
+        {
+          "section_no": 481,
+          "title": "Bail to require accused to appear before next Appellate Court"
+        },
+        {
+          "section_no": 482,
+          "title": "Direction for grant of bail to person apprehending arrest"
+        },
+        {
+          "section_no": 483,
+          "title": "Special powers of High Court or Court of Session regarding bail"
+        },
+        {
+          "section_no": 484,
+          "title": "Amount of bond and reduction thereof"
+        },
+        {
+          "section_no": 485,
+          "title": "Bond of accused and sureties"
+        },
+        {
+          "section_no": 486,
+          "title": "Declaration by sureties"
+        },
+        {
+          "section_no": 487,
+          "title": "Discharge from custody"
+        },
+        {
+          "section_no": 488,
+          "title": "Power to order sufficient bail when that first taken is insufficient"
+        },
+        {
+          "section_no": 489,
+          "title": "Discharge of sureties"
+        },
+        {
+          "section_no": 490,
+          "title": "Deposit instead of recognizance"
+        },
+        {
+          "section_no": 491,
+          "title": "Procedure when bond has been forfeited"
+        },
+        {
+          "section_no": 492,
+          "title": "Cancellation of bond and bail bond"
+        },
+        {
+          "section_no": 493,
+          "title": "Procedure in case of insolvency or death of surety or when a bond is forfeited"
+        },
+        {
+          "section_no": 494,
+          "title": "Bond required from child"
+        },
+        {
+          "section_no": 495,
+          "title": "Appeal from orders under section 491"
+        }
+      ]
+    },
+    {
+      "chapter_no": "XXXVI",
+      "chapter_title": "DISPOSAL OF PROPERTY",
+      "sections": [
+        {
+          "section_no": 496,
+          "title": "Power to direct levy of amount due on certain recognizances"
+        },
+        {
+          "section_no": 497,
+          "title": "Order for custody and disposal of property pending trial in certain cases"
+        },
+        {
+          "section_no": 498,
+          "title": "Order for disposal of property at conclusion of trial"
+        },
+        {
+          "section_no": 499,
+          "title": "Payment to innocent purchaser of money found on accused"
+        },
+        {
+          "section_no": 500,
+          "title": "Appeal against orders under section 498 or section 499"
+        },
+        {
+          "section_no": 501,
+          "title": "Destruction of libellous and other matter"
+        },
+        {
+          "section_no": 502,
+          "title": "Power to restore possession of immovable property"
+        },
+        {
+          "section_no": 503,
+          "title": "Procedure by police upon seizure of property"
+        },
+        {
+          "section_no": 504,
+          "title": "Procedure where no claimant appears within six months"
+        }
+      ]
+    },
+    {
+      "chapter_no": "XXXVII",
+      "chapter_title": "IRREGULAR PROCEEDINGS",
+      "sections": [
+        {
+          "section_no": 505,
+          "title": "Power to sell perishable property"
+        },
+        {
+          "section_no": 506,
+          "title": "Irregularities which do not vitiate proceedings"
+        },
+        {
+          "section_no": 507,
+          "title": "Irregularities which vitiate proceedings"
+        },
+        {
+          "section_no": 508,
+          "title": "Proceedings in wrong place"
+        },
+        {
+          "section_no": 509,
+          "title": "Non-compliance with provisions of section 183 or section 316"
+        },
+        {
+          "section_no": 510,
+          "title": "Effect of omission to frame, or absence of, or error in, charge"
+        },
+        {
+          "section_no": 511,
+          "title": "Finding or sentence when reversible by reason of error, omission or irregularity"
+        }
+      ]
+    },
+    {
+      "chapter_no": "XXXVIII",
+      "chapter_title": "LIMITATION FOR TAKING COGNIZANCE OF CERTAIN OFFENCES",
+      "sections": [
+        {
+          "section_no": 512,
+          "title": "Defect or error not to make attachment unlawful"
+        },
+        {
+          "section_no": 513,
+          "title": "Definitions"
+        },
+        {
+          "section_no": 514,
+          "title": "Bar to taking cognizance after lapse of period of limitation"
+        },
+        {
+          "section_no": 515,
+          "title": "Commencement of period of limitation"
+        },
+        {
+          "section_no": 516,
+          "title": "Exclusion of time in certain cases"
+        },
+        {
+          "section_no": 517,
+          "title": "Exclusion of date on which Court is closed"
+        },
+        {
+          "section_no": 518,
+          "title": "Continuing offence"
+        }
+      ]
+    },
+    {
+      "chapter_no": "XXXIX",
+      "chapter_title": "MISCELLANEOUS",
+      "sections": [
+        {
+          "section_no": 519,
+          "title": "Extension of period of limitation in certain cases"
+        },
+        {
+          "section_no": 520,
+          "title": "Trials before High Courts"
+        },
+        {
+          "section_no": 521,
+          "title": "Delivery to commanding officers of persons liable to be tried by Court-martial"
+        },
+        {
+          "section_no": 522,
+          "title": "Forms"
+        },
+        {
+          "section_no": 523,
+          "title": "Power of High Court to make rules"
+        },
+        {
+          "section_no": 524,
+          "title": "Power to alter functions allocated to Executive Magistrate in certain cases"
+        },
+        {
+          "section_no": 525,
+          "title": "Cases in which Judge or Magistrate is personally interested"
+        },
+        {
+          "section_no": 526,
+          "title": "Practising advocate not to sit as Magistrate in certain Courts"
+        },
+        {
+          "section_no": 527,
+          "title": "Public servant concerned in sale not to purchase or bid for property"
+        },
+        {
+          "section_no": 528,
+          "title": "Saving of inherent powers of High Court"
+        },
+        {
+          "section_no": 529,
+          "title": "Duty of High Court to exercise continuous superintendence over Courts"
+        },
+        {
+          "section_no": 530,
+          "title": "Trial and proceedings to be held in electronic mode"
+        },
+        {
+          "section_no": 531,
+          "title": "Repeal and savings"
+        }
+      ]
+    }
+  ]
+}

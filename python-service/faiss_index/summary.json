@@ -1,0 +1,12 @@
+{
+  "total_chunks": 9,
+  "sources": [
+    "pocso_act.txt",
+    "ipc_sections.txt",
+    "rti_act.txt",
+    "ni_act_cheque.txt",
+    "consumer_protection.txt",
+    "domestic_violence.txt"
+  ],
+  "dimension": 384
+}
