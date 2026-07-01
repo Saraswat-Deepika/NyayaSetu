@@ -254,13 +254,13 @@ const VoiceInput = ({ caseId, sessionId, history, language, onUploadSuccess, onU
                 }
             }
 
-            // Draw Neon Waveform Visualization
+            // Draw Waveform Visualization
             if (isPausedRef.current) {
                 // Drawing static flat lines when paused
                 ctx.beginPath();
                 ctx.moveTo(0, height / 2);
                 ctx.lineTo(width, height / 2);
-                ctx.strokeStyle = 'rgba(99, 102, 241, 0.4)';
+                ctx.strokeStyle = '#cbd5e1'; // Light gray stroke
                 ctx.lineWidth = 2;
                 ctx.stroke();
             } else {
@@ -272,23 +272,17 @@ const VoiceInput = ({ caseId, sessionId, history, language, onUploadSuccess, onU
                     const percent = dataArray[i] / 255;
                     const barHeight = Math.max(4, percent * (height * 0.75));
 
-                    // Multi-color neon gradient (Cyan -> Indigo -> Pink)
+                    // Multi-color light gradient (Blue -> Indigo)
                     const gradient = ctx.createLinearGradient(0, height / 2 - barHeight / 2, 0, height / 2 + barHeight / 2);
-                    gradient.addColorStop(0, '#06b6d4'); // Cyan
-                    gradient.addColorStop(0.5, '#6366f1'); // Indigo
-                    gradient.addColorStop(1, '#ec4899'); // Pink
+                    gradient.addColorStop(0, '#60a5fa'); // Blue-400
+                    gradient.addColorStop(1, '#4f46e5'); // Indigo-600
 
                     ctx.fillStyle = gradient;
-
-                    // Neon shadow blur effect
-                    ctx.shadowBlur = 6;
-                    ctx.shadowColor = '#6366f1';
 
                     // Centered vertical bars
                     ctx.fillRect(x, height / 2 - barHeight / 2, barWidth - 1.5, barHeight);
                     x += barWidth;
                 }
-                ctx.shadowBlur = 0; // Reset shadow
             }
         };
 
@@ -328,7 +322,7 @@ const VoiceInput = ({ caseId, sessionId, history, language, onUploadSuccess, onU
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             console.log("Audio Uploaded & Processed Successfully", data);
-            if (onUploadSuccess) onUploadSuccess(data.transcription, data.legalResponse, data.selectedStrategy, data.case?._id, data.sessionId);
+            if (onUploadSuccess) onUploadSuccess(data.transcription, data.legalResponse, data.selectedStrategy, data.case?._id, data.sessionId, data.laws, data.emergency);
         } catch (error) {
             console.error("Voice upload failed:", error);
             if (onUploadError) onUploadError(error);
@@ -362,8 +356,9 @@ const VoiceInput = ({ caseId, sessionId, history, language, onUploadSuccess, onU
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-center w-full">
                 {!isRecording ? (
                     <button 
-                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors shadow-sm shadow-blue-200 active:scale-95 text-sm" 
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors shadow-sm shadow-blue-200 active:scale-95 text-sm disabled:opacity-50" 
                         onClick={startRecording}
+                        disabled={isUploading}
                     >
                         <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
@@ -372,54 +367,86 @@ const VoiceInput = ({ caseId, sessionId, history, language, onUploadSuccess, onU
                         Start Recording
                     </button>
                 ) : (
-                    <button 
-                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-medium rounded-xl transition-colors shadow-sm shadow-red-200 active:scale-95 animate-pulse text-sm" 
-                        onClick={stopRecording}
-                    >
-                        <span className="w-3 h-3 bg-white rounded-sm shrink-0"></span>
-                        Stop Recording
-                    </button>
-                )}
-
-                {audioBlob && (
-                    <button 
-                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-xl transition-colors shadow-sm shadow-emerald-200 disabled:opacity-70 disabled:cursor-not-allowed active:scale-95 text-sm" 
-                        onClick={handleUpload}
-                        disabled={isUploading}
-                    >
-                        {isUploading ? (
-                            <>
-                                <svg className="animate-spin w-5 h-5 text-white shrink-0" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                        <button 
+                            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-medium rounded-xl transition-colors shadow-sm shadow-red-200 active:scale-95 text-sm" 
+                            onClick={stopRecording}
+                        >
+                            <span className="w-3 h-3 bg-white rounded-sm shrink-0"></span>
+                            Stop & Submit
+                        </button>
+                        
+                        {isPaused ? (
+                            <button 
+                                type="button"
+                                onClick={resumeRecording}
+                                title="Resume Recording"
+                                className="w-12 h-12 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 border border-slate-700 shrink-0"
+                            >
+                                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                                    <path d="M8 5v14l11-7z"></path>
                                 </svg>
                             </button>
                         ) : (
-                            <>
-                                <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
                             <button 
                                 type="button"
                                 onClick={pauseRecording}
                                 title="Pause Recording"
-                                className="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 border border-slate-700"
+                                className="w-12 h-12 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 border border-slate-700 shrink-0"
                             >
-                                <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
                                     <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path>
                                 </svg>
                             </button>
                         )}
-                    </button>
+                        
+                        <button 
+                            type="button"
+                            onClick={cancelRecording}
+                            title="Cancel Recording"
+                            className="w-12 h-12 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 border border-slate-200 shrink-0"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </div>
                 )}
             </div>
+
+            {isRecording && (
+                <div className="w-full mt-4">
+                    <canvas 
+                        ref={canvasRef} 
+                        width={600} 
+                        height={80} 
+                        className="w-full h-16 bg-slate-50 rounded-xl border border-slate-200"
+                    />
+                </div>
+            )}
             
             {isRecording && (
-                <div className="flex items-center gap-2 mt-4 text-red-500 font-medium text-sm">
-                    <span className="relative flex h-3 w-3 shrink-0">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                    </span>
-                    Recording in progress...
+                <div className="flex items-center justify-between mt-4">
+                    <div className="flex items-center gap-2 text-red-500 font-medium text-sm">
+                        <span className="relative flex h-3 w-3 shrink-0">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                        </span>
+                        {isPaused ? 'Recording paused' : 'Recording in progress...'}
+                    </div>
+                    <div className="text-slate-600 font-mono text-sm font-semibold">
+                        {formatTime(recordingTime)}
+                    </div>
+                </div>
+            )}
+
+            {isUploading && (
+                <div className="flex items-center gap-3 mt-4 text-blue-600 font-medium text-sm">
+                    <svg className="animate-spin w-5 h-5 text-blue-600 shrink-0" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Uploading & transcribing audio...
                 </div>
             )}
         </div>

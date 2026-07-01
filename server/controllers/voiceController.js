@@ -2,6 +2,8 @@ const { transcribeAudio } = require('../services/whisperService');
 const banditService = require('../services/banditService');
 const Case = require('../models/Case');
 const ChatSession = require('../models/ChatSession');
+const { matchLaws } = require('../services/lawService');
+const { checkEmergency } = require('../services/emergencyService');
 
 const handleVoiceUpload = async (req, res) => {
     try {
@@ -19,12 +21,21 @@ const handleVoiceUpload = async (req, res) => {
         }
 
         const language = req.body.language || 'English';
+        const sessionId = req.body.sessionId;
 
         // Call whisperService to transcribe
         const transcript = await transcribeAudio(req.file.path, language);
 
         // Check if the query is a legal query
-        const legalCheck = await banditService.isLegalQuery(transcript);
+        const emergencyResult = checkEmergency(transcript);
+        let matchedLaws = [];
+
+        // 1. Run legal query check and classification concurrently to save latency
+        const [legalCheck, classifiedCategory] = await Promise.all([
+            banditService.isLegalQuery(transcript),
+            banditService.classifyCategory(transcript)
+        ]);
+
         if (!legalCheck) {
             let nonLegalMessage = "";
             try {
@@ -45,35 +56,95 @@ Politely greet them if it is a greeting. If it is a technical, personal, or off-
 If this is a product defect or warranty issue, you might have rights under the Consumer Protection Act. Please let me know how I can assist you legally.`;
             }
 
+            let chatSession = null;
+            if (req.user) {
+                if (sessionId) {
+                    chatSession = await ChatSession.findOne({ _id: sessionId, userId: req.user._id });
+                }
+
+                if (chatSession) {
+                    chatSession.messages.push({ role: 'user', content: transcript });
+                    chatSession.messages.push({
+                        role: 'ai',
+                        content: nonLegalMessage,
+                        queryId: null,
+                        strategy: 'None',
+                        feedback: 'none',
+                        laws: [],
+                        emergency: emergencyResult
+                    });
+                    chatSession.markModified('messages');
+                    await chatSession.save();
+                } else {
+                    const titleWords = transcript.split(/\s+/).slice(0, 6).join(' ');
+                    const chatTitle = titleWords.length < transcript.length ? `${titleWords}...` : titleWords;
+
+                    chatSession = new ChatSession({
+                        userId: req.user._id,
+                        title: chatTitle,
+                        messages: [
+                            { role: 'user', content: transcript },
+                            {
+                                role: 'ai',
+                                content: nonLegalMessage,
+                                queryId: null,
+                                strategy: 'None',
+                                feedback: 'none',
+                                laws: [],
+                                emergency: emergencyResult
+                            }
+                        ]
+                    });
+                    await chatSession.save();
+                }
+            }
+
             return res.json({
                 transcription: transcript,
                 transcript: transcript,
                 legalResponse: nonLegalMessage,
                 selectedStrategy: 'None',
                 confidenceScore: 1.0,
-                case: null
+                case: null,
+                sessionId: chatSession ? chatSession._id : null,
+                chatSession: chatSession,
+                laws: [],
+                emergency: emergencyResult
             });
         }
 
         // Classify category and select strategy using banditService
-        let category = 'Property Law';
+        let category = classifiedCategory || 'Property Law';
         let selectedStrategy = 'GeminiLLM';
         let confidenceScore = 0.8;
         let legalResponse = '';
 
         try {
-            category = await banditService.classifyCategory(transcript);
             const strategyResult = await banditService.getBestStrategy(category);
             selectedStrategy = strategyResult.selectedArm;
             confidenceScore = strategyResult.confidence;
 
             await banditService.incrementSelection(category, selectedStrategy);
-            legalResponse = await banditService.generateAnswerByStrategy(selectedStrategy, transcript, category, history, language);
+
+            // Generate answer and match laws in parallel to reduce sequential API roundtrips
+            const [generatedResponse, lawsResult] = await Promise.all([
+                banditService.generateAnswerByStrategy(selectedStrategy, transcript, category, history, language),
+                matchLaws(transcript, language || 'English')
+            ]);
+            legalResponse = generatedResponse;
+            matchedLaws = lawsResult;
         } catch (banditErr) {
             console.error("⚠️ Voice Bandit selection failed. Falling back to direct LLM:", banditErr.message);
             const { getLegalGuidance } = require('../services/geminiService');
             selectedStrategy = 'GeminiLLM';
-            legalResponse = await getLegalGuidance(transcript, history, language);
+            
+            // Fallback generation and laws matching in parallel!
+            const [fallbackResponse, lawsResult] = await Promise.all([
+                getLegalGuidance(transcript, history, language),
+                matchLaws(transcript, language || 'English')
+            ]);
+            legalResponse = fallbackResponse;
+            matchedLaws = lawsResult;
         }
 
         // Save to Case model
@@ -94,7 +165,6 @@ If this is a product defect or warranty issue, you might have rights under the C
 
         // Save messages in ChatSession if user is logged in
         let chatSession = null;
-        const sessionId = req.body.sessionId;
         if (req.user) {
             if (sessionId) {
                 // Find existing chat session
@@ -112,7 +182,9 @@ If this is a product defect or warranty issue, you might have rights under the C
                     content: legalResponse,
                     queryId: newCase?._id,
                     strategy: selectedStrategy,
-                    feedback: 'none'
+                    feedback: 'none',
+                    laws: matchedLaws,
+                    emergency: emergencyResult
                 });
                 chatSession.markModified('messages');
                 await chatSession.save();
@@ -132,7 +204,9 @@ If this is a product defect or warranty issue, you might have rights under the C
                             content: legalResponse,
                             queryId: newCase?._id,
                             strategy: selectedStrategy,
-                            feedback: 'none'
+                            feedback: 'none',
+                            laws: matchedLaws,
+                            emergency: emergencyResult
                         }
                     ]
                 });
@@ -149,7 +223,9 @@ If this is a product defect or warranty issue, you might have rights under the C
             confidenceScore: confidenceScore === Infinity ? 0.95 : confidenceScore,
             case: newCase,
             sessionId: chatSession ? chatSession._id : null,
-            chatSession: chatSession
+            chatSession: chatSession,
+            laws: matchedLaws,
+            emergency: emergencyResult
         });
 
     } catch (error) {

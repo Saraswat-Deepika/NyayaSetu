@@ -1,7 +1,7 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -122,6 +122,7 @@ This is a mock legal response for testing purposes.`;
 
     try {
         const systemInstruction = `You are NyayaSetu, an AI Legal Assistant for India.
+CRITICAL: Every URL, website address, or link you mention MUST be strictly formatted as clickable markdown links, e.g. [Cyber Crime Portal](https://cybercrime.gov.in/) or [Women Helpline Portal](http://www.ncwhelpline.in/). Never write raw, unclickable links like "https://cybercrime.gov.in/" or "cybercrime.gov.in". Make sure the links are 100% correct official portals.
 Provide ONLY the absolute necessary information. Do not include any conversational filler, introductory text, or extra context.
 Use short, simple sentences and clear bullet points or step-by-step lists. It must be extremely easy for a common citizen to understand.
 Respond in the language: ${language || 'English'}. Ensure the entire response (including explanation and layout headings) is returned in this language.
