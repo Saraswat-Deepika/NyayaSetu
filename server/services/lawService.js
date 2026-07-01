@@ -10,7 +10,7 @@ const matchLaws = async (userQuery, language = 'English') => {
         if (laws.length === 0) return [];
 
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
+        const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
         const model = genAI.getGenerativeModel({ 
             model: GEMINI_MODEL,
             generationConfig: { responseMimeType: "application/json" }

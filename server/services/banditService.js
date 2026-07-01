@@ -12,9 +12,9 @@ const ARMS = ['RAG', 'GeminiLLM', 'LegalTemplate', 'SimilarCase'];
 const EXPLORATION_CONSTANT = 1.0;
 
 const MODELS_TO_TRY = [
-    'gemini-3.1-flash-lite',
+    'gemini-1.5-flash',
     'gemini-2.5-flash',
-    'gemini-3-flash-preview',
+    'gemini-2.0-flash',
     'gemini-flash-latest'
 ];
 
@@ -614,8 +614,15 @@ const recordFeedback = async (queryId, feedbackType) => {
  */
 const isLegalQuery = async (query) => {
     // Simple heuristic check first to save API calls for very common conversational words
-    const lowerQuery = query.toLowerCase().trim();
-    if (['hello', 'hi', 'hey', 'namaste', 'pranam'].includes(lowerQuery)) {
+    const lowerQuery = query.toLowerCase().trim().replace(/[?.!,]/g, '');
+    const conversationalPhrases = [
+        'hello', 'hi', 'hey', 'namaste', 'pranam', 'salam', 'hola',
+        'good morning', 'good afternoon', 'good evening', 'good night',
+        'thank you', 'thanks', 'bye', 'goodbye', 'ok', 'okay', 'yes', 'no',
+        'who are you', 'how are you', 'what is your name', 'whats your name',
+        'help', 'test', 'testing', 'hello nyayasetu', 'hi nyayasetu'
+    ];
+    if (conversationalPhrases.includes(lowerQuery)) {
         return false;
     }
 

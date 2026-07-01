@@ -26,8 +26,14 @@ const askLegalQuestion = async (req, res) => {
         let confidenceScore = 0.8;
         let guidance = '';
 
-        // Check if the query is a legal query
-        const legalCheck = await banditService.isLegalQuery(userQuery);
+        // 1. Run legal query check and classification concurrently to save latency
+        const [legalCheck, classifiedCategory] = await Promise.all([
+            banditService.isLegalQuery(userQuery),
+            (!category || category === 'RTI' || category === 'Other')
+                ? banditService.classifyCategory(userQuery)
+                : Promise.resolve(category)
+        ]);
+
         if (!legalCheck) {
             let nonLegalMessage = "";
             try {
@@ -107,12 +113,9 @@ If this is a product defect or warranty issue, you might have rights under the C
             });
         }
 
-        try {
-            // 1. Classify the user query's category if not provided or generic
-            if (!category || category === 'RTI' || category === 'Other') {
-                category = await banditService.classifyCategory(userQuery);
-            }
+        category = classifiedCategory;
 
+        try {
             // 2. Select the optimal strategy (arm) using UCB1
             const strategyResult = await banditService.getBestStrategy(category);
             selectedStrategy = strategyResult.selectedArm;
@@ -121,16 +124,25 @@ If this is a product defect or warranty issue, you might have rights under the C
             // 3. Increment selection count
             await banditService.incrementSelection(category, selectedStrategy);
 
-            // 4. Generate answer using the selected strategy
-            guidance = await banditService.generateAnswerByStrategy(selectedStrategy, userQuery, category, history, language);
+            // 4. Generate answer and match laws in parallel to reduce sequential API roundtrips
+            const [generatedGuidance, matchedLawsResult] = await Promise.all([
+                banditService.generateAnswerByStrategy(selectedStrategy, userQuery, category, history, language),
+                matchLaws(userQuery, language || 'English')
+            ]);
+            guidance = generatedGuidance;
+            matchedLaws = matchedLawsResult;
         } catch (banditErr) {
             console.error("⚠️ Bandit answer selection failed. Falling back to direct LLM:", banditErr.message);
             selectedStrategy = 'GeminiLLM';
-            guidance = await getLegalGuidance(userQuery, history, language);
+            
+            // Fallback generation and laws matching in parallel!
+            const [fallbackGuidance, matchedLawsResult] = await Promise.all([
+                getLegalGuidance(userQuery, history, language),
+                matchLaws(userQuery, language || 'English')
+            ]);
+            guidance = fallbackGuidance;
+            matchedLaws = matchedLawsResult;
         }
-
-        // Fetch matched laws for legal queries
-        matchedLaws = await matchLaws(userQuery, language || 'English');
 
         // Save response to Case model if user is logged in
         let newCase = null;
