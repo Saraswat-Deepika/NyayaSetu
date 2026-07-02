@@ -1,3 +1,5 @@
+import React, { useState } from 'react';
+import VoiceInput from '../components/VoiceInput';
 import AILegalHelpPage from './AILegalHelpPage';
 
 const VoiceInputPage = () => {

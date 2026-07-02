@@ -294,7 +294,7 @@ const AILegalHelpPage = () => {
                             Send
                         </button>
                     </div>
-                </main>
+                </div>
             </div>
         </div>
     );

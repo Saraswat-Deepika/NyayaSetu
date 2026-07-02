@@ -2,6 +2,131 @@ const { extractTextFromPDF } = require('../services/pdfService');
 const { indexDocument, askDocumentQuestion } = require('../services/ragService');
 const { generateDocumentSummary, translateSummary } = require('../services/geminiService');
 const Document = require('../models/Document');
+const DocumentHistory = require('../models/DocumentHistory');
+const mongoose = require('mongoose');
+const { getStorageLimits } = require('../config/storage');
+
+const ensureString = (val, joinWith = '\n') => {
+    if (val === null || val === undefined) return '';
+    if (typeof val === 'string') return val;
+    if (Array.isArray(val)) {
+        return val.map(item => {
+            if (item === null || item === undefined) return '';
+            if (typeof item === 'object') return JSON.stringify(item);
+            return String(item);
+        }).filter(Boolean).join(joinWith);
+    }
+    if (typeof val === 'object') return JSON.stringify(val);
+    return String(val);
+};
+
+const ensureArray = (val) => {
+    if (val === null || val === undefined) return [];
+    if (Array.isArray(val)) {
+        return val.map(item => {
+            if (item === null || item === undefined) return '';
+            if (typeof item === 'object') return JSON.stringify(item);
+            return String(item);
+        }).filter(Boolean);
+    }
+    if (typeof val === 'string') {
+        if (val.trim().startsWith('[') && val.trim().endsWith(']')) {
+            try {
+                const parsed = JSON.parse(val);
+                if (Array.isArray(parsed)) {
+                    return parsed.map(item => {
+                        if (item === null || item === undefined) return '';
+                        if (typeof item === 'object') return JSON.stringify(item);
+                        return String(item);
+                    }).filter(Boolean);
+                }
+            } catch (e) {}
+        }
+        return [val];
+    }
+    return [String(val)];
+};
+
+const normalizeSummary = (summary) => {
+    if (!summary) return summary;
+    
+    const normalized = { ...summary };
+
+    if (normalized.structuredData) {
+        const sd = { ...normalized.structuredData };
+        sd.documentType = ensureString(sd.documentType);
+        sd.partiesInvolved = ensureArray(sd.partiesInvolved);
+        sd.courtName = ensureString(sd.courtName);
+        sd.caseNumber = ensureString(sd.caseNumber);
+        sd.judgeName = ensureString(sd.judgeName);
+        sd.filingDate = ensureString(sd.filingDate);
+        sd.relevantSections = ensureArray(sd.relevantSections);
+        sd.petitioner = ensureString(sd.petitioner);
+        sd.respondent = ensureString(sd.respondent);
+        sd.legalKeywords = ensureArray(sd.legalKeywords);
+        normalized.structuredData = sd;
+    }
+
+    if (normalized.aiSummary) {
+        const ai = { ...normalized.aiSummary };
+        ai.documentOverview = ensureString(ai.documentOverview);
+        ai.partiesInvolved = ensureString(ai.partiesInvolved);
+        ai.factsOfCase = ensureString(ai.factsOfCase);
+        ai.legalIssues = ensureString(ai.legalIssues);
+        ai.decisionOutcome = ensureString(ai.decisionOutcome);
+        ai.keyTakeaways = ensureArray(ai.keyTakeaways);
+        normalized.aiSummary = ai;
+    }
+
+    if (normalized.simpleLanguageSummary !== undefined) {
+        normalized.simpleLanguageSummary = ensureString(normalized.simpleLanguageSummary);
+    }
+
+    if (normalized.citizenSummary) {
+        const cs = { ...normalized.citizenSummary };
+        cs.whatThisDocumentIsAbout = ensureString(cs.whatThisDocumentIsAbout);
+        cs.whoIsInvolved = ensureString(cs.whoIsInvolved);
+        cs.keyFactsAndDecisions = ensureArray(cs.keyFactsAndDecisions);
+        cs.whatThisMeansForYou = ensureString(cs.whatThisMeansForYou);
+        cs.whatYouShouldDoNext = ensureArray(cs.whatYouShouldDoNext);
+        cs.importantDatesAndDeadlines = ensureArray(cs.importantDatesAndDeadlines);
+        if (Array.isArray(cs.legalTermsExplained)) {
+            cs.legalTermsExplained = cs.legalTermsExplained.map(item => ({
+                term: ensureString(item?.term),
+                definition: ensureString(item?.definition)
+            }));
+        } else {
+            cs.legalTermsExplained = [];
+        }
+        cs.risksToBeAwareOf = ensureArray(cs.risksToBeAwareOf);
+        normalized.citizenSummary = cs;
+    }
+
+    if (Array.isArray(normalized.riskAnalysis)) {
+        normalized.riskAnalysis = normalized.riskAnalysis.map(risk => ({
+            issue: ensureString(risk?.issue),
+            severity: ['Green', 'Yellow', 'Red'].includes(risk?.severity) ? risk.severity : 'Green',
+            description: ensureString(risk?.description)
+        }));
+    }
+
+    if (Array.isArray(normalized.timeline)) {
+        normalized.timeline = normalized.timeline.map(t => ({
+            date: ensureString(t?.date),
+            event: ensureString(t?.event)
+        }));
+    }
+
+    if (normalized.confidenceScores) {
+        const csScore = { ...normalized.confidenceScores };
+        csScore.ocrAccuracy = typeof csScore.ocrAccuracy === 'number' ? csScore.ocrAccuracy : parseInt(csScore.ocrAccuracy) || 0;
+        csScore.summaryConfidence = typeof csScore.summaryConfidence === 'number' ? csScore.summaryConfidence : parseInt(csScore.summaryConfidence) || 0;
+        csScore.entityExtractionConfidence = typeof csScore.entityExtractionConfidence === 'number' ? csScore.entityExtractionConfidence : parseInt(csScore.entityExtractionConfidence) || 0;
+        normalized.confidenceScores = csScore;
+    }
+
+    return normalized;
+};
 
 const formatSummaryToMarkdown = (summary) => {
     if (!summary) return 'No summary available.';
@@ -104,10 +229,56 @@ const formatSummaryToMarkdown = (summary) => {
     return markdown.trim();
 };
 
+// Note: getStorageLimits is imported from config/storage.js at the top.
+
+const formatBytes = (bytes, decimals = 2) => {
+    if (!bytes || isNaN(bytes)) return '0 MB';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    if (i < 0) return '0 Bytes';
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+};
+
 const uploadDocument = async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ error: 'No file uploaded' });
+        }
+
+        // Storage Limit Checks
+        const plan = req.user?.plan || 'Free';
+        const limits = getStorageLimits(plan);
+
+        // Fetch user's current counts using MongoDB Aggregation
+        const stats = await DocumentHistory.aggregate([
+            { $match: { userId: new mongoose.Types.ObjectId(req.user._id), deleted: { $ne: true } } },
+            {
+                $group: {
+                    _id: null,
+                    totalDocs: { $sum: 1 },
+                    totalSize: { $sum: '$fileSize' }
+                }
+            }
+        ]);
+        const currentDocs = stats[0]?.totalDocs || 0;
+        const currentSize = stats[0]?.totalSize || 0;
+        const incomingSize = req.file.size || 0;
+
+        if (currentDocs >= limits.maxDocs || (currentSize + incomingSize) > limits.maxSize) {
+            // Delete the uploaded file from disk to prevent leak
+            const fs = require('fs');
+            if (fs.existsSync(req.file.path)) {
+                fs.unlinkSync(req.file.path);
+            }
+            return res.status(400).json({ 
+                error: 'Storage limit reached',
+                message: `You have used ${formatBytes(currentSize)} of your ${formatBytes(limits.maxSize)} limit. Delete old documents or download and remove them before uploading new files.`,
+                limitReached: true,
+                currentSize,
+                maxSize: limits.maxSize
+            });
         }
 
         const { caseId, language } = req.body;
@@ -150,7 +321,8 @@ const uploadDocument = async (req, res) => {
         }
 
         // 4. Generate AI Summary
-        const summary = await generateDocumentSummary(extractedText, language);
+        const rawSummary = await generateDocumentSummary(extractedText, language);
+        const summary = normalizeSummary(rawSummary);
         
         // Map structured fields to database Document schema
         newDoc.structuredData = summary.structuredData;
@@ -166,6 +338,52 @@ const uploadDocument = async (req, res) => {
 
         // Format summary as Markdown for frontend rendering
         const markdownSummary = formatSummaryToMarkdown(summary);
+
+        // 5b. Save automatically to history
+        try {
+            const historyEntry = new DocumentHistory({
+                _id: newDoc._id, // Share the same MongoDB ID
+                userId: req.user._id,
+                filename: req.file.filename,
+                originalName: req.file.originalname,
+                documentName: req.file.originalname,
+                language: language || 'English',
+                uploadDate: new Date(),
+                lastOpened: new Date(),
+                documentType: summary.structuredData?.documentType || 'Unknown',
+                fileSize: req.file.size || 0,
+                storageUsed: req.file.size || 0,
+                deleted: false,
+                deletedAt: null,
+                extractedText: extractedText,
+                summary: {
+                    markdown: markdownSummary,
+                    aiSummary: summary.aiSummary,
+                    simpleLanguageSummary: summary.simpleLanguageSummary
+                },
+                metadata: {
+                    structuredData: summary.structuredData,
+                    citizenSummary: summary.citizenSummary,
+                    riskAnalysis: summary.riskAnalysis,
+                    timeline: summary.timeline,
+                    confidenceScores: summary.confidenceScores
+                },
+                downloads: {
+                    extractedText: `/api/documents/${newDoc._id}/download/txt`,
+                    pdf: `/api/documents/${newDoc._id}/download/pdf`
+                },
+                ragData: {
+                    indexed: true,
+                    vectorStorePath: 'faiss_store'
+                },
+                favorite: false,
+                tags: [],
+                processingStatus: "Completed"
+            });
+            await historyEntry.save();
+        } catch (historyErr) {
+            console.error("Failed to automatically save document to history:", historyErr);
+        }
 
         res.status(201).json({
             message: 'Document processed successfully',
@@ -339,7 +557,8 @@ const translateDocument = async (req, res) => {
 
             // Call the translate service
             console.log(`[Controller] Translating document ${documentId} to ${language}...`);
-            translatedData = await translateSummary(englishSummary, language);
+            const rawTranslatedData = await translateSummary(englishSummary, language);
+            translatedData = normalizeSummary(rawTranslatedData);
 
             // Save to database
             doc.translatedSummaries.set(language, translatedData);

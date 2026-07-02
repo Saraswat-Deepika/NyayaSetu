@@ -7,7 +7,8 @@ const userSchema = new mongoose.Schema({
     password: { type: String, required: true },
     phone: { type: String },
     preferredLanguage: { type: String, enum: ['Hindi', 'English', 'hindi', 'english'], default: 'English' },
-    role: { type: String, enum: ['user', 'admin'], default: 'user' }
+    role: { type: String, enum: ['user', 'admin'], default: 'user' },
+    plan: { type: String, enum: ['Free', 'Student', 'Premium'], default: 'Free' }
 }, { timestamps: true });
 
 // Hash password before saving

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { uploadDocument, chatWithDocument, translateDocument } from '../services/api';
+import { useParams, useNavigate } from 'react-router-dom';
+import { uploadDocument, chatWithDocument, translateDocument, getHistoryById, recordOpen } from '../services/api';
 import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'framer-motion';
 import { jsPDF } from 'jspdf';
@@ -119,11 +120,57 @@ const getCitizenSummary = (result) => {
 };
 
 const DocumentUploadPage = () => {
+    const { id } = useParams();
+    const navigate = useNavigate();
+
     const [file, setFile] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [result, setResult] = useState(null);
     const [language, setLanguage] = useState('English');
     const [translating, setTranslating] = useState(false);
+    
+    // Storage Limit Dialog states
+    const [showLimitDialog, setShowLimitDialog] = useState(false);
+    const [limitDialogData, setLimitDialogData] = useState({ used: 0, max: 0 });
+
+    const formatBytes = (bytes, decimals = 2) => {
+        if (!bytes || isNaN(bytes)) return '0 MB';
+        const k = 1024;
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        if (i < 0) return '0 Bytes';
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    };
+
+    useEffect(() => {
+        if (id) {
+            const fetchSavedAnalysis = async () => {
+                setIsLoading(true);
+                try {
+                    await recordOpen(id);
+                    const data = await getHistoryById(id);
+                    setResult(data);
+                    if (data.language) {
+                        setLanguage(data.language);
+                    }
+                } catch (error) {
+                    console.error("Failed to load document analysis from history:", error);
+                    alert("Error loading document from history. It may have been deleted.");
+                    navigate('/dashboard/documents');
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+            fetchSavedAnalysis();
+        } else {
+            // When URL ID is cleared, reset page state to upload mode
+            setResult(null);
+            setFile(null);
+            setChatHistory([]);
+            if (synthRef.current) synthRef.current.cancel();
+        }
+    }, [id]);
 
     // Toggle for Original Legal language vs Simple Language Explanation
     const [isSimpleMode, setIsSimpleMode] = useState(false);
@@ -164,6 +211,7 @@ const DocumentUploadPage = () => {
             setChatHistory([]); // Reset chat
             setIsSimpleMode(false);
             if (synthRef.current) synthRef.current.cancel();
+            navigate('/dashboard/documents');
         }
     };
 
@@ -176,6 +224,7 @@ const DocumentUploadPage = () => {
             setChatHistory([]);
             setIsSimpleMode(false);
             if (synthRef.current) synthRef.current.cancel();
+            navigate('/dashboard/documents');
         }
     };
 
@@ -192,8 +241,16 @@ const DocumentUploadPage = () => {
             setResult(data);
         } catch (error) {
             console.error("Document upload failed:", error);
-            const errorMsg = error.response?.data?.error || `Failed to process document: ${error.message}`;
-            alert(`Error: ${errorMsg}`);
+            if (error.response?.data?.limitReached) {
+                setLimitDialogData({
+                    used: error.response.data.currentSize || 0,
+                    max: error.response.data.maxSize || (5120 * 1024 * 1024)
+                });
+                setShowLimitDialog(true);
+            } else {
+                const errorMsg = error.response?.data?.error || `Failed to process document: ${error.message}`;
+                alert(`Error: ${errorMsg}`);
+            }
         } finally {
             setIsLoading(false);
         }
@@ -1045,6 +1102,7 @@ const DocumentUploadPage = () => {
                                 setResult(null);
                                 setChatHistory([]);
                                 if (synthRef.current) synthRef.current.cancel();
+                                navigate('/dashboard/documents');
                             }}
                         >
                             Reset & Upload New Document
@@ -1052,6 +1110,59 @@ const DocumentUploadPage = () => {
                     </div>
                 </div>
             )}
+
+            {/* Storage Limit Reached Dialog overlay */}
+            <AnimatePresence>
+                {showLimitDialog && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 bg-black/45 backdrop-blur-sm"
+                            onClick={() => setShowLimitDialog(false)}
+                        />
+                        <motion.div 
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 max-w-sm w-full z-50 text-center space-y-4 relative"
+                        >
+                            <div className="w-12 h-12 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+                                <ShieldAlert className="w-6 h-6" />
+                            </div>
+                            
+                            <div className="space-y-2">
+                                <h3 className="text-lg font-black text-slate-800">Storage Limit Reached</h3>
+                                <p className="text-slate-505 text-xs sm:text-sm leading-relaxed">
+                                    You have used <strong>{formatBytes(limitDialogData.used)}</strong> of your <strong>{formatBytes(limitDialogData.max)}</strong> storage.
+                                </p>
+                                <p className="text-slate-450 text-[11px] leading-relaxed">
+                                    Delete old documents or download and remove them before uploading new files.
+                                </p>
+                            </div>
+
+                            <div className="flex items-center gap-3 pt-2">
+                                <button
+                                    onClick={() => setShowLimitDialog(false)}
+                                    className="flex-1 py-2.5 border border-slate-200 hover:bg-slate-50 text-slate-550 hover:text-slate-850 font-bold rounded-xl text-xs transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setShowLimitDialog(false);
+                                        navigate('/dashboard/history');
+                                    }}
+                                    className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-md shadow-blue-500/10 transition-colors"
+                                >
+                                    Manage Storage
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
