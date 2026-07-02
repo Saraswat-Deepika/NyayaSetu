@@ -422,13 +422,15 @@ const AILegalHelpPage = () => {
                         </div>
                     </div>
 
-                    {/* Chats List */}
-                    <div className="flex-1 overflow-y-auto py-3 px-2 scrollbar-thin space-y-0.5">
-                        {isSessionsLoading ? (
-                            <div className="space-y-2 p-2">
-                                {[1, 2, 3, 4].map(n => (
-                                    <div key={n} className="h-10 bg-slate-100 rounded-lg animate-pulse" />
-                                ))}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 flex-1 flex flex-col overflow-hidden">
+                {/* Chat Area */}
+                <div className="flex-1 p-4 sm:p-6 overflow-y-auto bg-slate-50/50 space-y-6">
+                    {messages.map((msg, index) => (
+                        <div key={index} className={`flex gap-3 sm:gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                            <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0 text-sm sm:text-base ${
+                                msg.role === 'user' ? 'bg-blue-100 text-blue-600' : 'bg-indigo-100 text-indigo-600'
+                            }`}>
+                                {msg.role === 'user' ? '👤' : '⚖️'}
                             </div>
                         ) : filteredSessions.length === 0 ? (
                             <p className="text-xs text-slate-400 text-center py-8">
@@ -883,7 +885,7 @@ const AILegalHelpPage = () => {
                             </p>
                         </div>
                     </div>
-                </main>
+                </div>
             </div>
 
             {/* Nearby Legal Help Modal */}

@@ -1,7 +1,7 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -24,16 +24,46 @@ const generateContentWithRetry = async (model, prompt, maxRetries = 4) => {
 
 const MODELS_TO_TRY = [
     'gemini-2.5-flash',
-    'gemini-2.0-flash',
-    'gemini-1.5-flash',
-    'gemini-2.5-pro',
-    'gemini-flash-latest',
-    'gemini-2.0-flash-lite',
-    'gemini-3.5-flash',
     'gemini-3.1-flash-lite',
-    'gemini-3-flash-preview',
-    'gemini-flash-lite-latest'
+    'gemini-2.5-pro',
+    'gemini-3.5-flash',
+    'gemini-2.0-flash',
+    'gemini-2.0-flash-lite'
 ];
+
+const generateContentWithFallback = async (prompt, systemInstruction = null, isJson = false) => {
+    const primaryModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+    const modelsToTry = [primaryModel, ...MODELS_TO_TRY.filter(m => m !== primaryModel)];
+    
+    let lastError;
+    for (const modelName of modelsToTry) {
+        try {
+            console.log(`[Gemini API] Trying model: ${modelName}...`);
+            const config = { model: modelName };
+            if (systemInstruction) {
+                config.systemInstruction = systemInstruction;
+            }
+            if (isJson) {
+                config.generationConfig = { responseMimeType: "application/json" };
+            }
+            const model = genAI.getGenerativeModel(config);
+            
+            const result = await generateContentWithRetry(model, prompt);
+            const text = result.response.text();
+            
+            if (isJson) {
+                JSON.parse(text); // validate it parses as valid JSON
+            }
+            
+            console.log(`[Gemini API] Success with model: ${modelName}`);
+            return result;
+        } catch (error) {
+            lastError = error;
+            console.warn(`[Gemini API] Failed with model ${modelName}:`, error.message);
+        }
+    }
+    throw lastError || new Error("Failed to generate content after trying multiple models.");
+};
 
 const getLegalGuidance = async (userQuery, historyOrLanguage, languageOrUndefined) => {
     let history = [];
@@ -145,12 +175,7 @@ You MUST format your output under these exact headings and nothing else:
 ### Disclaimer
 (Include a short, standard 1-sentence legal disclaimer)`;
         
-        const model = genAI.getGenerativeModel({ 
-            model: GEMINI_MODEL,
-            systemInstruction: systemInstruction 
-        });
-
-        const result = await generateContentWithRetry(model, userQuery);
+        const result = await generateContentWithFallback(userQuery, systemInstruction);
         return result.response.text();
     } catch (error) {
         console.error("Gemini AI Error:", error);
@@ -160,7 +185,6 @@ You MUST format your output under these exact headings and nothing else:
 
 const cleanupOCRText = async (rawText) => {
     try {
-        const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
         const prompt = `You are a legal text processing assistant. The following text was extracted via OCR from a legal document and may contain messy artifacts, broken words, or typos. 
 Please carefully read and clean up the text. 
 CRITICAL RULES:
@@ -172,7 +196,7 @@ CRITICAL RULES:
 Raw Text:
 ${rawText}`;
         
-        const result = await generateContentWithRetry(model, prompt);
+        const result = await generateContentWithFallback(prompt);
         return result.response.text();
     } catch (error) {
         console.error("OCR Cleanup Error:", error);
@@ -183,10 +207,6 @@ ${rawText}`;
 
 const generateDocumentSummary = async (documentText, targetLanguage) => {
     try {
-        const model = genAI.getGenerativeModel({ 
-            model: GEMINI_MODEL,
-            generationConfig: { responseMimeType: "application/json" }
-        });
         const prompt = `You are an expert Indian legal assistant. Analyze the following legal document text and extract structured information, section-wise summaries, simple language explanations, legal risks, and a timeline.
 
 Output valid JSON exactly matching this schema:
@@ -249,7 +269,7 @@ Output valid JSON exactly matching this schema:
 
 Document Text:
 ${documentText}`;
-        const result = await generateContentWithRetry(model, prompt);
+        const result = await generateContentWithFallback(prompt, null, true);
         const text = result.response.text();
         let summaryJson = JSON.parse(text);
 
@@ -273,10 +293,6 @@ ${documentText}`;
 
 const translateSummary = async (analysisJson, targetLanguage) => {
     try {
-        const model = genAI.getGenerativeModel({ 
-            model: GEMINI_MODEL,
-            generationConfig: { responseMimeType: "application/json" }
-        });
         const prompt = `You are an expert legal translator. Translate the following JSON document analysis into ${targetLanguage}.
 Maintain the exact same JSON structure, only translate the string values. DO NOT translate keys.
 For "riskAnalysis.severity", keep the exact values 'Green', 'Yellow', or 'Red'.
@@ -286,15 +302,13 @@ ${JSON.stringify(analysisJson)}
 
 Output valid JSON exactly matching the input structure.`;
         
-        const result = await generateContentWithRetry(model, prompt);
+        const result = await generateContentWithFallback(prompt, null, true);
         const text = result.response.text();
         return JSON.parse(text);
     } catch (error) {
         console.error("Gemini Translate Error:", error);
         throw new Error("Failed to translate document summary: " + error.message);
     }
-    
-    throw new Error(lastError?.message || "Failed to generate document summary after trying multiple models.");
 };
 
 module.exports = { getLegalGuidance, generateDocumentSummary, cleanupOCRText, translateSummary };

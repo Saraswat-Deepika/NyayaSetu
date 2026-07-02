@@ -18,6 +18,7 @@ const DashboardLayout = () => {
         { path: '/dashboard', label: 'Overview', icon: '🏠', exact: true },
         { path: '/dashboard/voice', label: 'Voice Input', icon: '🎤' },
         { path: '/dashboard/documents', label: 'Document Upload', icon: '📄' },
+        { path: '/dashboard/history', label: 'Document History', icon: '📜' },
         { path: '/dashboard/legal-help', label: 'AI Legal Help', icon: '⚖️' },
         { path: '/dashboard/settings', label: 'Settings', icon: '⚙️' },
     ];

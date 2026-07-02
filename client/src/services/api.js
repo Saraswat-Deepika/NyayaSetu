@@ -116,6 +116,44 @@ export const deleteChatSession = async (sessionId) => {
     return response.data;
 };
 
+export const getHistory = async (params) => {
+    const response = await api.get('/history', { params });
+    return response.data;
+};
+
+export const getHistoryById = async (id) => {
+    const response = await api.get(`/history/${id}`);
+    return response.data;
+};
+
+export const deleteHistory = async (id, permanent = false) => {
+    const url = permanent ? `/history/${id}?permanent=true` : `/history/${id}`;
+    const response = await api.delete(url);
+    return response.data;
+};
+
+export const updateHistory = async (id, data) => {
+    const response = await api.put(`/history/${id}`, data);
+    return response.data;
+};
+
+export const restoreHistory = async (id) => {
+    const response = await api.patch(`/history/${id}/restore`);
+    return response.data;
+};
+
+export const emptyTrash = async () => {
+    const response = await api.delete('/history/trash/empty');
+    return response.data;
+};
+
+export const toggleFavorite = async (id) => {
+    const response = await api.patch(`/history/${id}/favorite`);
+    return response.data;
+};
+
+export const recordOpen = async (id) => {
+    const response = await api.patch(`/history/${id}/open`);
 export const findNearbyHelp = async (locationData) => {
     const response = await api.post('/legal/nearby-help', locationData);
     return response.data;
