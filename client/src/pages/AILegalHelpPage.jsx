@@ -422,15 +422,13 @@ const AILegalHelpPage = () => {
                         </div>
                     </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 flex-1 flex flex-col overflow-hidden">
-                {/* Chat Area */}
-                <div className="flex-1 p-4 sm:p-6 overflow-y-auto bg-slate-50/50 space-y-6">
-                    {messages.map((msg, index) => (
-                        <div key={index} className={`flex gap-3 sm:gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                            <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0 text-sm sm:text-base ${
-                                msg.role === 'user' ? 'bg-blue-100 text-blue-600' : 'bg-indigo-100 text-indigo-600'
-                            }`}>
-                                {msg.role === 'user' ? '👤' : '⚖️'}
+                    {/* Chats List */}
+                    <div className="flex-1 overflow-y-auto py-3 px-2 scrollbar-thin space-y-0.5">
+                        {isSessionsLoading ? (
+                            <div className="space-y-2 p-2">
+                                {[1, 2, 3, 4].map(n => (
+                                    <div key={n} className="h-10 bg-slate-100 rounded-lg animate-pulse" />
+                                ))}
                             </div>
                         ) : filteredSessions.length === 0 ? (
                             <p className="text-xs text-slate-400 text-center py-8">
@@ -745,6 +743,32 @@ const AILegalHelpPage = () => {
                                                     </div>
                                                 )}
                                             </div>
+                                            {/* Copy Button */}
+                                            <div className={`mt-1.5 flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                                <button 
+                                                    onClick={() => handleCopy(msg.content, index)}
+                                                    className="opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 transition-opacity duration-200 px-2.5 py-0.5 rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-slate-600 transition-all flex items-center gap-1.5 text-[10px] cursor-pointer focus:ring-2 focus:ring-blue-500 focus:outline-none relative"
+                                                    aria-label={msg.role === 'user' ? 'Copy question' : 'Copy answer'}
+                                                    title={msg.role === 'user' ? 'Copy question' : 'Copy answer'}
+                                                >
+                                                    {copiedMessageIndex === index ? (
+                                                        <>
+                                                            <svg className="w-3.5 h-3.5 text-green-500 animate-in zoom-in duration-200" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                                            </svg>
+                                                            <span className="text-green-600 font-medium">Copied</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                                            </svg>
+                                                            <span>Copy</span>
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
@@ -885,7 +909,7 @@ const AILegalHelpPage = () => {
                             </p>
                         </div>
                     </div>
-                </div>
+                </main>
             </div>
 
             {/* Nearby Legal Help Modal */}

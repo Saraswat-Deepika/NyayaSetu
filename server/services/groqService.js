@@ -1,18 +1,38 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { OpenAI } = require('openai');
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
+const groq = new OpenAI({
+    apiKey: process.env.GROQ_API_KEY,
+    baseURL: 'https://api.groq.com/openai/v1'
+});
+
+const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-const generateContentWithRetry = async (model, prompt, maxRetries = 4) => {
+/**
+ * Centrally manages chat completions with Groq, including rate-limit (429) retries.
+ */
+const generateChatCompletion = async (prompt, systemInstruction = null, jsonMode = false, maxRetries = 4) => {
+    const messages = [];
+    if (systemInstruction) {
+        messages.push({ role: 'system', content: systemInstruction });
+    }
+    messages.push({ role: 'user', content: prompt });
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
-            return await model.generateContent(prompt);
+            const response = await groq.chat.completions.create({
+                model: GROQ_MODEL,
+                messages,
+                temperature: 0.1,
+                ...(jsonMode ? { response_format: { type: "json_object" } } : {})
+            });
+            return response.choices[0].message.content;
         } catch (error) {
+            // Check for rate limits (429)
             if (error.status === 429 || (error.message && error.message.includes('429'))) {
                 const backoffTime = attempt * 3000;
-                console.warn(`[Gemini API] Rate limit hit (Attempt ${attempt}/${maxRetries}). Retrying in ${backoffTime / 1000} seconds...`);
+                console.warn(`[Groq API] Rate limit hit (Attempt ${attempt}/${maxRetries}). Retrying in ${backoffTime / 1000} seconds...`);
                 if (attempt === maxRetries) throw error;
                 await sleep(backoffTime);
             } else {
@@ -20,49 +40,6 @@ const generateContentWithRetry = async (model, prompt, maxRetries = 4) => {
             }
         }
     }
-};
-
-const MODELS_TO_TRY = [
-    'gemini-2.5-flash',
-    'gemini-3.1-flash-lite',
-    'gemini-2.5-pro',
-    'gemini-3.5-flash',
-    'gemini-2.0-flash',
-    'gemini-2.0-flash-lite'
-];
-
-const generateContentWithFallback = async (prompt, systemInstruction = null, isJson = false) => {
-    const primaryModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-    const modelsToTry = [primaryModel, ...MODELS_TO_TRY.filter(m => m !== primaryModel)];
-    
-    let lastError;
-    for (const modelName of modelsToTry) {
-        try {
-            console.log(`[Gemini API] Trying model: ${modelName}...`);
-            const config = { model: modelName };
-            if (systemInstruction) {
-                config.systemInstruction = systemInstruction;
-            }
-            if (isJson) {
-                config.generationConfig = { responseMimeType: "application/json" };
-            }
-            const model = genAI.getGenerativeModel(config);
-            
-            const result = await generateContentWithRetry(model, prompt);
-            const text = result.response.text();
-            
-            if (isJson) {
-                JSON.parse(text); // validate it parses as valid JSON
-            }
-            
-            console.log(`[Gemini API] Success with model: ${modelName}`);
-            return result;
-        } catch (error) {
-            lastError = error;
-            console.warn(`[Gemini API] Failed with model ${modelName}:`, error.message);
-        }
-    }
-    throw lastError || new Error("Failed to generate content after trying multiple models.");
 };
 
 const getLegalGuidance = async (userQuery, historyOrLanguage, languageOrUndefined) => {
@@ -175,10 +152,10 @@ You MUST format your output under these exact headings and nothing else:
 ### Disclaimer
 (Include a short, standard 1-sentence legal disclaimer)`;
         
-        const result = await generateContentWithFallback(userQuery, systemInstruction);
-        return result.response.text();
+        const result = await generateChatCompletion(userQuery, systemInstruction, false);
+        return result;
     } catch (error) {
-        console.error("Gemini AI Error:", error);
+        console.error("Groq AI Error:", error);
         throw new Error("Failed to get legal guidance.");
     }
 };
@@ -196,8 +173,8 @@ CRITICAL RULES:
 Raw Text:
 ${rawText}`;
         
-        const result = await generateContentWithFallback(prompt);
-        return result.response.text();
+        const result = await generateChatCompletion(prompt, null, false);
+        return result;
     } catch (error) {
         console.error("OCR Cleanup Error:", error);
         console.warn("Falling back to raw text due to cleanup failure.");
@@ -207,108 +184,49 @@ ${rawText}`;
 
 const generateDocumentSummary = async (documentText, targetLanguage) => {
     try {
-        const prompt = `You are an expert Indian legal assistant. Analyze the following legal document text and extract structured information, section-wise summaries, simple language explanations, legal risks, and a timeline.
+        const systemPrompt = `You are an expert Indian legal assistant. Analyze the following legal document text and extract structured information, section-wise summaries, simple language explanations, legal risks, and a timeline.`;
 
-Output valid JSON exactly matching this schema:
-{
-  "structuredData": {
-    "documentType": "string (e.g. FIR, Court Order, Rent Agreement, Contract)",
-    "partiesInvolved": ["string"],
-    "courtName": "string or null",
-    "caseNumber": "string or null",
-    "judgeName": "string or null",
-    "filingDate": "string or null",
-    "relevantSections": ["string (e.g. Section 482 CrPC)"],
-    "petitioner": "string or null",
-    "respondent": "string or null",
-    "legalKeywords": ["string"]
-  },
-  "aiSummary": {
-    "documentOverview": "string",
-    "partiesInvolved": "string",
-    "factsOfCase": "string",
-    "legalIssues": "string",
-    "decisionOutcome": "string",
-    "keyTakeaways": ["string"]
-  },
-  "simpleLanguageSummary": "string (A complete plain English explanation of the entire document that a non-lawyer can understand)",
-  "citizenSummary": {
-    "whatThisDocumentIsAbout": "string (2 to 3 simple sentences in plain language explaining what this document is about)",
-    "whoIsInvolved": "string (list of names and their roles in the document in plain language)",
-    "keyFactsAndDecisions": ["string (key facts and decisions, maximum 6 short bullet points)"],
-    "whatThisMeansForYou": "string (1 to 2 clear sentences explaining direct implications/consequences for the person, written in plain language)",
-    "whatYouShouldDoNext": ["string (numbered action steps in plain language)"],
-    "importantDatesAndDeadlines": ["string (all key deadlines, hearing dates, or dates when actions must be completed from the document)"],
-    "legalTermsExplained": [
-      {
-        "term": "string (difficult legal term or phrase used in the document)",
-        "definition": "string (simple definition of the term in plain language for a citizen)"
-      }
-    ],
-    "risksToBeAwareOf": ["string (2 to 3 plain language warnings about risks or negative consequences in the document)"]
-  },
-  "riskAnalysis": [
-    {
-      "issue": "string (e.g. Missing signatures, High penalty)",
-      "severity": "string (Must be exactly 'Green', 'Yellow', or 'Red')",
-      "description": "string"
-    }
-  ],
-  "timeline": [
-    {
-      "date": "string (e.g. 10 Jan 2025)",
-      "event": "string"
-    }
-  ],
-  "confidenceScores": {
-    "ocrAccuracy": "number (0-100, estimate based on text messiness)",
-    "summaryConfidence": "number (0-100)",
-    "entityExtractionConfidence": "number (0-100)"
-  }
-}
-
-Document Text:
-${documentText}`;
-        const result = await generateContentWithFallback(prompt, null, true);
-        const text = result.response.text();
-        let summaryJson = JSON.parse(text);
+        const prompt = `Document Text:\n${documentText}`;
+        const result = await generateChatCompletion(prompt, systemPrompt, true);
+        let summaryJson = JSON.parse(result);
 
         // If target language is specified and not English, translate the summary
         if (targetLanguage && targetLanguage.toLowerCase() !== 'english') {
-            console.log(`[Gemini API] Translating summary to ${targetLanguage}...`);
+            console.log(`[Groq API] Translating summary to ${targetLanguage}...`);
             try {
                 summaryJson = await translateSummary(summaryJson, targetLanguage);
             } catch (transError) {
-                console.error(`[Gemini API] Failed to translate summary to ${targetLanguage}:`, transError);
+                console.error(`[Groq API] Failed to translate summary to ${targetLanguage}:`, transError);
                 // Return English version if translation fails rather than throwing
             }
         }
 
         return summaryJson;
     } catch (error) {
-        console.error("Gemini Summary Error:", error);
+        console.error("Groq Summary Error:", error);
         throw new Error("Failed to generate document summary: " + error.message);
     }
 };
 
 const translateSummary = async (analysisJson, targetLanguage) => {
     try {
-        const prompt = `You are an expert legal translator. Translate the following JSON document analysis into ${targetLanguage}.
+        const systemPrompt = `You are an expert legal translator. Translate the following JSON document analysis into ${targetLanguage}.
 Maintain the exact same JSON structure, only translate the string values. DO NOT translate keys.
-For "riskAnalysis.severity", keep the exact values 'Green', 'Yellow', or 'Red'.
+For "riskAnalysis.severity", keep the exact values 'Green', 'Yellow', or 'Red'.`;
 
-JSON to translate:
-${JSON.stringify(analysisJson)}
-
-Output valid JSON exactly matching the input structure.`;
-        
-        const result = await generateContentWithFallback(prompt, null, true);
-        const text = result.response.text();
-        return JSON.parse(text);
+        const prompt = `JSON to translate:\n${JSON.stringify(analysisJson)}\n\nOutput valid JSON exactly matching the input structure.`;
+        const result = await generateChatCompletion(prompt, systemPrompt, true);
+        return JSON.parse(result);
     } catch (error) {
-        console.error("Gemini Translate Error:", error);
+        console.error("Groq Translate Error:", error);
         throw new Error("Failed to translate document summary: " + error.message);
     }
 };
 
-module.exports = { getLegalGuidance, generateDocumentSummary, cleanupOCRText, translateSummary };
+module.exports = {
+    generateChatCompletion,
+    getLegalGuidance,
+    generateDocumentSummary,
+    cleanupOCRText,
+    translateSummary
+};

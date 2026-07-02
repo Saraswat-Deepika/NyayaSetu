@@ -1,10 +1,7 @@
 const axios = require('axios');
 const FormData = require('form-data');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 const fs = require('fs');
 const path = require('path');
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const transcribeAudio = async (filePath, language) => {
   if (process.env.MOCK_AI === 'true') {
@@ -76,70 +73,48 @@ const transcribeAudio = async (filePath, language) => {
     }
   }
 
-  // Fallback/Primary Gemini AI transcription
+  // Fallback/Primary Groq Whisper AI transcription
   try {
-    console.log('📡 Transcribing audio using Gemini AI:', filePath, 'Language target:', language);
-    const audioData = fs.readFileSync(filePath);
-    const base64Audio = audioData.toString('base64');
-
-    const ext = path.extname(filePath).toLowerCase().replace('.', '');
-    const mimeMap = {
-      'webm': 'audio/webm',
-      'mp3': 'audio/mp3',
-      'wav': 'audio/wav',
-      'ogg': 'audio/ogg',
-      'm4a': 'audio/mp4'
-    };
-    const mimeType = mimeMap[ext] || 'audio/webm';
-
-    const promptText = language 
-      ? `Please transcribe this audio accurately in ${language}. Return only the transcribed text, nothing else.`
-      : 'Please transcribe this audio accurately. Return only the transcribed text, nothing else.';
-
-    const audioPart = {
-      inlineData: {
-        mimeType: mimeType,
-        data: base64Audio
-      }
-    };
-
-    const modelsToTry = [
-      'gemini-3-flash-preview',
-      'gemini-3.1-flash-lite',
-      'gemini-2.5-flash',
-      'gemini-flash-latest',
-      'gemini-2.0-flash-lite',
-      'gemini-2.5-pro',
-      'gemini-3.5-flash'
-    ];
-    let lastError;
-    let transcript;
-
-    for (const modelName of modelsToTry) {
-      try {
-        console.log(`📡 Attempting transcription with model: ${modelName}`);
-        const model = genAI.getGenerativeModel({ model: modelName }, { timeout: 15000 });
-        const result = await model.generateContent([audioPart, { text: promptText }]);
-        transcript = result.response.text();
-        if (transcript) {
-          console.log(`✅ Transcription Succeeded using ${modelName}`);
-          break;
-        }
-      } catch (err) {
-        console.warn(`⚠️ Transcription failed with ${modelName}:`, err.message);
-        lastError = err;
+    console.log('📡 Transcribing audio using Groq Whisper API:', filePath, 'Language hint:', language);
+    const formData = new FormData();
+    formData.append('file', fs.createReadStream(filePath));
+    formData.append('model', 'whisper-large-v3');
+    
+    if (language) {
+      const isoMap = {
+        'english': 'en',
+        'hindi': 'hi',
+        'bengali': 'bn',
+        'telugu': 'te',
+        'marathi': 'mr',
+        'tamil': 'ta',
+        'gujarati': 'gu',
+        'urdu': 'ur',
+        'kannada': 'kn',
+        'malayalam': 'ml',
+        'punjabi': 'pa',
+        'odia': 'or'
+      };
+      const langCode = isoMap[language.toLowerCase()];
+      if (langCode) {
+        formData.append('language', langCode);
       }
     }
 
-    if (!transcript) {
-      throw lastError || new Error("All transcription models failed");
-    }
+    const response = await axios.post('https://api.groq.com/openai/v1/audio/transcriptions', formData, {
+      headers: {
+        ...formData.getHeaders(),
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+      },
+      timeout: 60000 // 1 minute timeout
+    });
 
-    console.log('✅ Gemini Transcript Received:', transcript);
-    return transcript;
+    console.log('✅ Groq Whisper Transcript Received:', response.data.text);
+    return response.data.text;
   } catch (err) {
-    console.error('❌ Gemini Transcription Error:', err.message);
-    throw new Error(`Gemini transcription failed: ${err.message}`);
+    const errMsg = err.response?.data?.error?.message || err.message;
+    console.error('❌ Groq Whisper Transcription Error:', errMsg);
+    throw new Error(`Groq Whisper transcription failed: ${errMsg}`);
   }
 };
 

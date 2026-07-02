@@ -1,6 +1,6 @@
 const { extractTextFromPDF } = require('../services/pdfService');
 const { indexDocument, askDocumentQuestion } = require('../services/ragService');
-const { generateDocumentSummary, translateSummary } = require('../services/geminiService');
+const { generateDocumentSummary, translateSummary } = require('../services/groqService');
 const Document = require('../models/Document');
 const DocumentHistory = require('../models/DocumentHistory');
 const mongoose = require('mongoose');

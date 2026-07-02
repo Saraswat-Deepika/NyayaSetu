@@ -1,6 +1,5 @@
 const Law = require('../models/Law');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-
+const groqService = require('./groqService');
 /**
  * Matches the user's query against verified laws in the database using Gemini.
  */
@@ -9,12 +8,7 @@ const matchLaws = async (userQuery, language = 'English') => {
         const laws = await Law.find({});
         if (laws.length === 0) return [];
 
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
-        const model = genAI.getGenerativeModel({ 
-            model: GEMINI_MODEL,
-            generationConfig: { responseMimeType: "application/json" }
-        });
+        // Groq client initialized centrally in groqService
 
         // Format laws as context list for Gemini
         const lawsInput = laws.map(l => ({
@@ -44,13 +38,12 @@ Output your answer strictly as a JSON array of objects with the following schema
 
 If no laws from the list are applicable, return an empty array []. Only select laws that are genuinely relevant. Do not write anything other than the JSON output.`;
 
-        const result = await model.generateContent(prompt);
+        const rawResponse = await groqService.generateChatCompletion(prompt, null, true);
         let matchedList = [];
         try {
-            const rawText = result.response.text();
-            matchedList = JSON.parse(rawText.trim());
+            matchedList = JSON.parse(rawResponse.trim());
         } catch (e) {
-            console.error("Failed to parse Gemini laws JSON response:", e);
+            console.error("Failed to parse Groq laws JSON response:", e);
         }
 
         if (!Array.isArray(matchedList)) {
