@@ -1,4 +1,4 @@
-const { getLegalGuidance } = require('../services/geminiService');
+const { getLegalGuidance } = require('../services/groqService');
 const Case = require('../models/Case');
 const ChatSession = require('../models/ChatSession');
 const banditService = require('../services/banditService');
@@ -42,11 +42,8 @@ The user asked a non-legal, conversational, or off-topic question: "${userQuery}
 Provide a friendly response (1-3 sentences) in the language of the query. 
 Politely greet them if it is a greeting. If it is a technical, personal, or off-topic question, briefly address it or suggest how they can resolve it, and then politely remind them that you can help with legal queries (such as consumer complaints for defective products/warranties, police reports, tenant rights, etc.) and ask how you can assist them legally.`;
                 
-                const { GoogleGenerativeAI } = require('@google/generative-ai');
-                const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-                const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-                const result = await model.generateContent(redirectSystemPrompt);
-                nonLegalMessage = result.response.text();
+                const groqService = require('../services/groqService');
+                nonLegalMessage = await groqService.generateChatCompletion(redirectSystemPrompt);
             } catch (err) {
                 console.error("Failed to generate custom non-legal redirect:", err);
                 nonLegalMessage = `I am NyayaSetu, your AI Legal Assistant for Indian law. I can only assist with legal queries, citizen rights, or drafting legal documents. 

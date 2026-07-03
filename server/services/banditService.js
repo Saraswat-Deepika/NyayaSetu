@@ -1,21 +1,17 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 const BanditStat = require('../models/BanditStat');
 const QueryFeedback = require('../models/QueryFeedback');
 const Case = require('../models/Case');
 const ChatSession = require('../models/ChatSession');
 const { searchRelevantDocs } = require('./ragService');
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
 const CATEGORIES = ['Property Law', 'Criminal Law', 'Consumer Rights', 'Family Law', 'Employment Law'];
 const ARMS = ['RAG', 'GeminiLLM', 'LegalTemplate', 'SimilarCase'];
 const EXPLORATION_CONSTANT = 1.0;
 
 const MODELS_TO_TRY = [
-    'gemini-1.5-flash',
-    'gemini-2.5-flash',
-    'gemini-2.0-flash',
-    'gemini-flash-latest'
+    'llama-3.3-70b-versatile',
+    'llama-3.1-8b-instant',
+    'mixtral-8x7b-32768'
 ];
 
 /**
@@ -23,15 +19,28 @@ const MODELS_TO_TRY = [
  */
 const generateContentWithFallback = async (prompt, systemInstruction = undefined) => {
     let lastError = null;
+    const { OpenAI } = require('openai');
+    const apiKey = process.env.GROQ_API_KEY;
+    const client = new OpenAI({
+        apiKey,
+        baseURL: 'https://api.groq.com/openai/v1'
+    });
+
     for (const modelName of MODELS_TO_TRY) {
         try {
             console.log(`🤖 Attempting content generation with model: ${modelName}`);
-            const model = genAI.getGenerativeModel({ 
+            const messages = [];
+            if (systemInstruction) {
+                messages.push({ role: 'system', content: systemInstruction });
+            }
+            messages.push({ role: 'user', content: prompt });
+
+            const response = await client.chat.completions.create({
                 model: modelName,
-                ...(systemInstruction ? { systemInstruction } : {})
-            }, { timeout: 15000 });
-            const result = await model.generateContent(prompt);
-            const text = result.response.text();
+                messages,
+                temperature: 0.1
+            });
+            const text = response.choices[0].message.content;
             if (text) {
                 console.log(`✅ Generation Succeeded using ${modelName}`);
                 return text;

@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { Link } from 'react-router-dom';
-import { getDocumentAnalytics } from '../services/api';
+import { getDocumentAnalytics, getHistory, deleteHistory } from '../services/api';
 import { 
     ResponsiveContainer, BarChart, Bar, XAxis, YAxis, 
     CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell 
 } from 'recharts';
 import { 
     FileText, Calendar, Clock, Globe, Scale, Mic, 
-    MessageSquare, ArrowUpRight, Loader2, Sparkles
+    MessageSquare, ArrowUpRight, Loader2, Sparkles,
+    Trash2, Play, Download, History
 } from 'lucide-react';
 
 const COLORS = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#EC4899'];
@@ -16,6 +17,7 @@ const COLORS = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#EC4899'
 const Dashboard = () => {
     const { user } = useAppContext();
     const [analytics, setAnalytics] = useState(null);
+    const [recentDocs, setRecentDocs] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -23,6 +25,10 @@ const Dashboard = () => {
             try {
                 const data = await getDocumentAnalytics();
                 setAnalytics(data);
+                
+                // Fetch user's recent documents
+                const historyData = await getHistory({ limit: 5, sortBy: 'Recent' });
+                setRecentDocs(historyData.documents || []);
             } catch (error) {
                 console.error("Failed to load dashboard analytics:", error);
             } finally {
@@ -194,6 +200,83 @@ const Dashboard = () => {
                             <Link to="/dashboard/documents" className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-md shadow-blue-500/15">
                                 Analyze First Document
                             </Link>
+                        </div>
+                    )}
+
+                    {/* Recent Documents Section */}
+                    {recentDocs.length > 0 && (
+                        <div className="bg-white rounded-3xl p-6 border border-slate-200/50 shadow-sm space-y-4">
+                            <h3 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-3 flex items-center gap-2">
+                                <History className="text-blue-505 w-5 h-5" /> Recent Documents
+                            </h3>
+                            <div className="divide-y divide-slate-100">
+                                {recentDocs.map((doc) => (
+                                    <div key={doc._id} className="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group">
+                                        <div className="flex items-start gap-3">
+                                            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-inner">
+                                                <FileText className="w-5 h-5" />
+                                            </div>
+                                            <div className="space-y-1 min-w-0">
+                                                <h4 className="text-sm font-bold text-slate-800 truncate max-w-md sm:max-w-xl pr-2">{doc.documentName || doc.originalName}</h4>
+                                                <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-400">
+                                                    <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {new Date(doc.uploadDate).toLocaleDateString()}</span>
+                                                    <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> Opened: {new Date(doc.lastOpened).toLocaleDateString()}</span>
+                                                    {doc.documentType && (
+                                                        <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-655 text-[10px] font-bold uppercase">{doc.documentType}</span>
+                                                    )}
+                                                    {doc.fileSize && (
+                                                        <span>{(doc.fileSize / 1024 / 1024).toFixed(2)} MB</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            <Link 
+                                                to={`/dashboard/documents/${doc._id}`}
+                                                className="px-3.5 py-2 bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white font-bold rounded-xl transition-all text-xs flex items-center gap-1.5 shadow-sm shadow-blue-100/50"
+                                            >
+                                                <Play className="w-3.5 h-3.5 fill-current" /> Open Again
+                                            </Link>
+                                            <button 
+                                                onClick={() => {
+                                                    const element = document.createElement("a");
+                                                    const fileContent = doc.extractedText || "No text extracted.";
+                                                    const textBlob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+                                                    element.href = URL.createObjectURL(textBlob);
+                                                    element.download = `${doc.documentName || 'Document'}_extracted_text.txt`;
+                                                    document.body.appendChild(element);
+                                                    element.click();
+                                                    document.body.removeChild(element);
+                                                }}
+                                                className="p-2 border border-slate-200 hover:bg-slate-50 text-slate-500 hover:text-slate-800 rounded-xl transition-colors"
+                                                title="Download Extracted Text"
+                                            >
+                                                <Download className="w-4 h-4" />
+                                            </button>
+                                            <button 
+                                                onClick={async () => {
+                                                    if (window.confirm("Delete this document? This action cannot be undone.")) {
+                                                        try {
+                                                            await deleteHistory(doc._id);
+                                                            setRecentDocs(prev => prev.filter(d => d._id !== doc._id));
+                                                            // Reload analytics count
+                                                            const freshData = await getDocumentAnalytics();
+                                                            setAnalytics(freshData);
+                                                        } catch (err) {
+                                                            console.error("Failed to delete document from history:", err);
+                                                            alert("Failed to delete document.");
+                                                        }
+                                                    }
+                                                }}
+                                                className="p-2 border border-slate-200 hover:bg-red-50 text-slate-500 hover:text-red-600 rounded-xl transition-colors"
+                                                title="Delete from History"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
                 </div>

@@ -1,7 +1,245 @@
 const { extractTextFromPDF } = require('../services/pdfService');
 const { indexDocument, askDocumentQuestion } = require('../services/ragService');
-const { generateDocumentSummary, translateSummary } = require('../services/geminiService');
+const { generateDocumentSummary, translateSummary } = require('../services/groqService');
 const Document = require('../models/Document');
+const DocumentHistory = require('../models/DocumentHistory');
+const mongoose = require('mongoose');
+const { getStorageLimits } = require('../config/storage');
+
+const ensureString = (val, joinWith = '\n') => {
+    if (val === null || val === undefined) return '';
+    if (typeof val === 'string') return val;
+    if (Array.isArray(val)) {
+        return val.map(item => {
+            if (item === null || item === undefined) return '';
+            if (typeof item === 'object') return JSON.stringify(item);
+            return String(item);
+        }).filter(Boolean).join(joinWith);
+    }
+    if (typeof val === 'object') return JSON.stringify(val);
+    return String(val);
+};
+
+const ensureArray = (val) => {
+    if (val === null || val === undefined) return [];
+    if (Array.isArray(val)) {
+        return val.map(item => {
+            if (item === null || item === undefined) return '';
+            if (typeof item === 'object') return JSON.stringify(item);
+            return String(item);
+        }).filter(Boolean);
+    }
+    if (typeof val === 'string') {
+        if (val.trim().startsWith('[') && val.trim().endsWith(']')) {
+            try {
+                const parsed = JSON.parse(val);
+                if (Array.isArray(parsed)) {
+                    return parsed.map(item => {
+                        if (item === null || item === undefined) return '';
+                        if (typeof item === 'object') return JSON.stringify(item);
+                        return String(item);
+                    }).filter(Boolean);
+                }
+            } catch (e) {}
+        }
+        return [val];
+    }
+    return [String(val)];
+};
+
+const normalizeSummary = (summary) => {
+    if (!summary) return summary;
+    
+    const normalized = { ...summary };
+
+    if (normalized.structuredData) {
+        const sd = { ...normalized.structuredData };
+        sd.documentType = ensureString(sd.documentType);
+        sd.partiesInvolved = ensureArray(sd.partiesInvolved);
+        sd.courtName = ensureString(sd.courtName);
+        sd.caseNumber = ensureString(sd.caseNumber);
+        sd.judgeName = ensureString(sd.judgeName);
+        sd.filingDate = ensureString(sd.filingDate);
+        sd.relevantSections = ensureArray(sd.relevantSections);
+        sd.petitioner = ensureString(sd.petitioner);
+        sd.respondent = ensureString(sd.respondent);
+        sd.legalKeywords = ensureArray(sd.legalKeywords);
+        normalized.structuredData = sd;
+    }
+
+    if (normalized.aiSummary) {
+        const ai = { ...normalized.aiSummary };
+        ai.documentOverview = ensureString(ai.documentOverview);
+        ai.partiesInvolved = ensureString(ai.partiesInvolved);
+        ai.factsOfCase = ensureString(ai.factsOfCase);
+        ai.legalIssues = ensureString(ai.legalIssues);
+        ai.decisionOutcome = ensureString(ai.decisionOutcome);
+        ai.keyTakeaways = ensureArray(ai.keyTakeaways);
+        normalized.aiSummary = ai;
+    }
+
+    if (normalized.simpleLanguageSummary !== undefined) {
+        normalized.simpleLanguageSummary = ensureString(normalized.simpleLanguageSummary);
+    }
+
+    if (normalized.citizenSummary) {
+        const cs = { ...normalized.citizenSummary };
+        cs.whatThisDocumentIsAbout = ensureString(cs.whatThisDocumentIsAbout);
+        cs.whoIsInvolved = ensureString(cs.whoIsInvolved);
+        cs.keyFactsAndDecisions = ensureArray(cs.keyFactsAndDecisions);
+        cs.whatThisMeansForYou = ensureString(cs.whatThisMeansForYou);
+        cs.whatYouShouldDoNext = ensureArray(cs.whatYouShouldDoNext);
+        cs.importantDatesAndDeadlines = ensureArray(cs.importantDatesAndDeadlines);
+        if (Array.isArray(cs.legalTermsExplained)) {
+            cs.legalTermsExplained = cs.legalTermsExplained.map(item => ({
+                term: ensureString(item?.term),
+                definition: ensureString(item?.definition)
+            }));
+        } else {
+            cs.legalTermsExplained = [];
+        }
+        cs.risksToBeAwareOf = ensureArray(cs.risksToBeAwareOf);
+        normalized.citizenSummary = cs;
+    }
+
+    if (Array.isArray(normalized.riskAnalysis)) {
+        normalized.riskAnalysis = normalized.riskAnalysis.map(risk => ({
+            issue: ensureString(risk?.issue),
+            severity: ['Green', 'Yellow', 'Red'].includes(risk?.severity) ? risk.severity : 'Green',
+            description: ensureString(risk?.description)
+        }));
+    }
+
+    if (Array.isArray(normalized.timeline)) {
+        normalized.timeline = normalized.timeline.map(t => ({
+            date: ensureString(t?.date),
+            event: ensureString(t?.event)
+        }));
+    }
+
+    if (normalized.confidenceScores) {
+        const csScore = { ...normalized.confidenceScores };
+        csScore.ocrAccuracy = typeof csScore.ocrAccuracy === 'number' ? csScore.ocrAccuracy : parseInt(csScore.ocrAccuracy) || 0;
+        csScore.summaryConfidence = typeof csScore.summaryConfidence === 'number' ? csScore.summaryConfidence : parseInt(csScore.summaryConfidence) || 0;
+        csScore.entityExtractionConfidence = typeof csScore.entityExtractionConfidence === 'number' ? csScore.entityExtractionConfidence : parseInt(csScore.entityExtractionConfidence) || 0;
+        normalized.confidenceScores = csScore;
+    }
+
+    return normalized;
+};
+
+const formatSummaryToMarkdown = (summary) => {
+    if (!summary) return 'No summary available.';
+    if (typeof summary === 'string') return summary;
+
+    let markdown = '';
+
+    // 1. Overview & Type
+    if (summary.structuredData) {
+        markdown += `### 📄 Document Information\n\n`;
+        if (summary.structuredData.documentType) {
+            markdown += `- **Document Type:** ${summary.structuredData.documentType}\n`;
+        }
+        if (summary.structuredData.courtName) {
+            markdown += `- **Court:** ${summary.structuredData.courtName}\n`;
+        }
+        if (summary.structuredData.caseNumber) {
+            markdown += `- **Case Number:** ${summary.structuredData.caseNumber}\n`;
+        }
+        if (summary.structuredData.judgeName) {
+            markdown += `- **Judge:** ${summary.structuredData.judgeName}\n`;
+        }
+        if (summary.structuredData.filingDate) {
+            markdown += `- **Filing Date:** ${summary.structuredData.filingDate}\n`;
+        }
+        if (summary.structuredData.petitioner) {
+            markdown += `- **Petitioner:** ${summary.structuredData.petitioner}\n`;
+        }
+        if (summary.structuredData.respondent) {
+            markdown += `- **Respondent:** ${summary.structuredData.respondent}\n`;
+        }
+        if (summary.structuredData.partiesInvolved && summary.structuredData.partiesInvolved.length > 0) {
+            markdown += `- **Parties Involved:** ${summary.structuredData.partiesInvolved.join(', ')}\n`;
+        }
+        if (summary.structuredData.relevantSections && summary.structuredData.relevantSections.length > 0) {
+            markdown += `- **Relevant Sections/Laws:** ${summary.structuredData.relevantSections.join(', ')}\n`;
+        }
+        if (summary.structuredData.legalKeywords && summary.structuredData.legalKeywords.length > 0) {
+            markdown += `- **Keywords:** ${summary.structuredData.legalKeywords.join(', ')}\n`;
+        }
+        markdown += `\n---\n\n`;
+    }
+
+    // 2. AI Summary
+    if (summary.aiSummary) {
+        markdown += `### 🔍 Analysis & Case Summary\n\n`;
+        if (summary.aiSummary.documentOverview) {
+            markdown += `**Overview:**\n${summary.aiSummary.documentOverview}\n\n`;
+        }
+        if (summary.aiSummary.partiesInvolved) {
+            markdown += `**Parties Roles:**\n${summary.aiSummary.partiesInvolved}\n\n`;
+        }
+        if (summary.aiSummary.factsOfCase) {
+            markdown += `**Facts of the Case:**\n${summary.aiSummary.factsOfCase}\n\n`;
+        }
+        if (summary.aiSummary.legalIssues) {
+            markdown += `**Key Legal Issues:**\n${summary.aiSummary.legalIssues}\n\n`;
+        }
+        if (summary.aiSummary.decisionOutcome) {
+            markdown += `**Outcome/Decision:**\n${summary.aiSummary.decisionOutcome}\n\n`;
+        }
+        if (summary.aiSummary.keyTakeaways && summary.aiSummary.keyTakeaways.length > 0) {
+            markdown += `**Key Takeaways:**\n`;
+            summary.aiSummary.keyTakeaways.forEach(takeaway => {
+                markdown += `- ${takeaway}\n`;
+            });
+            markdown += `\n`;
+        }
+        markdown += `---\n\n`;
+    }
+
+    // 3. Simple Language Summary
+    if (summary.simpleLanguageSummary) {
+        markdown += `### 💡 Plain Language Explanation\n\n`;
+        markdown += `${summary.simpleLanguageSummary}\n\n`;
+        markdown += `---\n\n`;
+    }
+
+    // 4. Risk Analysis
+    if (summary.riskAnalysis && summary.riskAnalysis.length > 0) {
+        markdown += `### ⚠️ Legal Risk Detection\n\n`;
+        summary.riskAnalysis.forEach(risk => {
+            let emoji = '🟢';
+            if (risk.severity === 'Red') emoji = '🔴';
+            else if (risk.severity === 'Yellow') emoji = '🟡';
+            markdown += `- **[${emoji} Severity: ${risk.severity || 'Green'}] ${risk.issue || 'Issue'}:** ${risk.description || 'N/A'}\n`;
+        });
+        markdown += `\n---\n\n`;
+    }
+
+    // 5. Timeline
+    if (summary.timeline && summary.timeline.length > 0) {
+        markdown += `### 📅 Timeline of Events\n\n`;
+        summary.timeline.forEach(event => {
+            markdown += `- **${event.date || 'N/A'}:** ${event.event || 'N/A'}\n`;
+        });
+        markdown += `\n---\n\n`;
+    }
+
+    return markdown.trim();
+};
+
+// Note: getStorageLimits is imported from config/storage.js at the top.
+
+const formatBytes = (bytes, decimals = 2) => {
+    if (!bytes || isNaN(bytes)) return '0 MB';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    if (i < 0) return '0 Bytes';
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+};
 
 const formatSummaryToMarkdown = (summary) => {
     if (!summary) return 'No summary available.';
@@ -110,6 +348,40 @@ const uploadDocument = async (req, res) => {
             return res.status(400).json({ error: 'No file uploaded' });
         }
 
+        // Storage Limit Checks
+        const plan = req.user?.plan || 'Free';
+        const limits = getStorageLimits(plan);
+
+        // Fetch user's current counts using MongoDB Aggregation
+        const stats = await DocumentHistory.aggregate([
+            { $match: { userId: new mongoose.Types.ObjectId(req.user._id), deleted: { $ne: true } } },
+            {
+                $group: {
+                    _id: null,
+                    totalDocs: { $sum: 1 },
+                    totalSize: { $sum: '$fileSize' }
+                }
+            }
+        ]);
+        const currentDocs = stats[0]?.totalDocs || 0;
+        const currentSize = stats[0]?.totalSize || 0;
+        const incomingSize = req.file.size || 0;
+
+        if (currentDocs >= limits.maxDocs || (currentSize + incomingSize) > limits.maxSize) {
+            // Delete the uploaded file from disk to prevent leak
+            const fs = require('fs');
+            if (fs.existsSync(req.file.path)) {
+                fs.unlinkSync(req.file.path);
+            }
+            return res.status(400).json({ 
+                error: 'Storage limit reached',
+                message: `You have used ${formatBytes(currentSize)} of your ${formatBytes(limits.maxSize)} limit. Delete old documents or download and remove them before uploading new files.`,
+                limitReached: true,
+                currentSize,
+                maxSize: limits.maxSize
+            });
+        }
+
         const { caseId, language } = req.body;
 
         // 1. Extract text based on file type
@@ -150,7 +422,8 @@ const uploadDocument = async (req, res) => {
         }
 
         // 4. Generate AI Summary
-        const summary = await generateDocumentSummary(extractedText, language);
+        const rawSummary = await generateDocumentSummary(extractedText, language);
+        const summary = normalizeSummary(rawSummary);
         
         // Map structured fields to database Document schema
         newDoc.structuredData = summary.structuredData;
@@ -166,6 +439,52 @@ const uploadDocument = async (req, res) => {
 
         // Format summary as Markdown for frontend rendering
         const markdownSummary = formatSummaryToMarkdown(summary);
+
+        // 5b. Save automatically to history
+        try {
+            const historyEntry = new DocumentHistory({
+                _id: newDoc._id, // Share the same MongoDB ID
+                userId: req.user._id,
+                filename: req.file.filename,
+                originalName: req.file.originalname,
+                documentName: req.file.originalname,
+                language: language || 'English',
+                uploadDate: new Date(),
+                lastOpened: new Date(),
+                documentType: summary.structuredData?.documentType || 'Unknown',
+                fileSize: req.file.size || 0,
+                storageUsed: req.file.size || 0,
+                deleted: false,
+                deletedAt: null,
+                extractedText: extractedText,
+                summary: {
+                    markdown: markdownSummary,
+                    aiSummary: summary.aiSummary,
+                    simpleLanguageSummary: summary.simpleLanguageSummary
+                },
+                metadata: {
+                    structuredData: summary.structuredData,
+                    citizenSummary: summary.citizenSummary,
+                    riskAnalysis: summary.riskAnalysis,
+                    timeline: summary.timeline,
+                    confidenceScores: summary.confidenceScores
+                },
+                downloads: {
+                    extractedText: `/api/documents/${newDoc._id}/download/txt`,
+                    pdf: `/api/documents/${newDoc._id}/download/pdf`
+                },
+                ragData: {
+                    indexed: true,
+                    vectorStorePath: 'faiss_store'
+                },
+                favorite: false,
+                tags: [],
+                processingStatus: "Completed"
+            });
+            await historyEntry.save();
+        } catch (historyErr) {
+            console.error("Failed to automatically save document to history:", historyErr);
+        }
 
         res.status(201).json({
             message: 'Document processed successfully',
@@ -339,7 +658,8 @@ const translateDocument = async (req, res) => {
 
             // Call the translate service
             console.log(`[Controller] Translating document ${documentId} to ${language}...`);
-            translatedData = await translateSummary(englishSummary, language);
+            const rawTranslatedData = await translateSummary(englishSummary, language);
+            translatedData = normalizeSummary(rawTranslatedData);
 
             // Save to database
             doc.translatedSummaries.set(language, translatedData);

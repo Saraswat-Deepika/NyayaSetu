@@ -379,6 +379,7 @@ const VoiceInput = ({ caseId, sessionId, history, language, onUploadSuccess, onU
                         {isPaused ? (
                             <button 
                                 type="button"
+                                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl transition-all shadow-sm shadow-indigo-200 active:scale-95 text-sm"
                                 onClick={resumeRecording}
                                 title="Resume Recording"
                                 className="w-12 h-12 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 border border-slate-700 shrink-0"
@@ -386,10 +387,12 @@ const VoiceInput = ({ caseId, sessionId, history, language, onUploadSuccess, onU
                                 <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
                                     <path d="M8 5v14l11-7z"></path>
                                 </svg>
+                                Resume
                             </button>
                         ) : (
                             <button 
                                 type="button"
+                                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-xl transition-all shadow-sm shadow-amber-200 active:scale-95 text-sm"
                                 onClick={pauseRecording}
                                 title="Pause Recording"
                                 className="w-12 h-12 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 border border-slate-700 shrink-0"
@@ -397,6 +400,7 @@ const VoiceInput = ({ caseId, sessionId, history, language, onUploadSuccess, onU
                                 <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
                                     <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path>
                                 </svg>
+                                Pause
                             </button>
                         )}
                         
@@ -413,6 +417,20 @@ const VoiceInput = ({ caseId, sessionId, history, language, onUploadSuccess, onU
                     </div>
                 )}
             </div>
+            
+            {isRecording && (
+                <div className="mt-4 p-4 bg-slate-950 rounded-2xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
+                    {/* Live Waveform Visualizer */}
+                    <div className="w-full md:w-2/3 h-[50px] bg-slate-900/60 rounded-xl px-3 py-1.5 flex items-center justify-center border border-slate-800/80">
+                        <canvas 
+                            ref={canvasRef} 
+                            width={320} 
+                            height={40} 
+                            className="w-full h-[40px] rounded-lg"
+                        />
+                    </div>
+                </div>
+            )}
 
             {isRecording && (
                 <div className="w-full mt-4">
