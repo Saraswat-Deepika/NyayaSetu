@@ -47,7 +47,6 @@ const VoiceInputPage = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [copyStatus, setCopyStatus] = useState({ index: null, type: null });
     const [selectedLanguage, setSelectedLanguage] = useState('English');
-    const [isVoicePanelOpen, setIsVoicePanelOpen] = useState(false);
 
     // Geolocation / Finder States
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
@@ -98,6 +97,14 @@ const VoiceInputPage = () => {
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    const handleMicTrigger = () => {
+        const micBtn = document.querySelector('.voice-input-mic-btn');
+        if (micBtn) {
+            micBtn.click();
+            micBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
     };
 
     useEffect(() => {
@@ -519,200 +526,255 @@ const VoiceInputPage = () => {
                             <div className="w-9 h-9 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                             <p className="text-xs text-slate-500">Loading chat history...</p>
                         </div>
-                    ) : (
-                        <div className="flex-1 p-4 md:p-6 overflow-y-auto space-y-6 scrollbar-thin">
-                            <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">
-                                
-                                {/* Welcome Interface when fresh chat */}
-                                {messages.length === 1 && (
-                                    <div className="max-w-xl mx-auto bg-white border border-slate-100 rounded-3xl p-6 shadow-sm flex flex-col items-center text-center space-y-5 animate-in fade-in slide-in-from-bottom-6 duration-500 my-4">
-                                        <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-3xl shadow-sm">
-                                            ⚖️
-                                        </div>
-                                        <div>
-                                            <h3 className="text-lg font-bold text-slate-800">Welcome to NyayaSetu</h3>
-                                            <p className="text-slate-500 text-xs mt-1.5 max-w-md leading-relaxed">
-                                                Your citizen-friendly AI Legal Assistant. Access real-time legal information, read applicable Indian laws, or find nearest stations and courts instantly.
-                                            </p>
-                                        </div>
-
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full pt-2">
-                                            <button 
-                                                onClick={handleFindNearbyClick}
-                                                className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50/50 hover:from-blue-100 hover:to-indigo-100/50 border border-blue-100 rounded-2xl flex flex-col items-center justify-center text-center transition-all cursor-pointer hover:shadow-sm active:scale-95 group"
-                                            >
-                                                <span className="text-2xl mb-1 group-hover:scale-110 transition-transform">📍</span>
-                                                <span className="text-xs font-bold text-slate-800">Find Nearby Help</span>
-                                                <span className="text-[10px] text-slate-500 mt-1">Locate Courts & Police Stations</span>
-                                            </button>
-                                            <button 
-                                                onClick={() => setInput("What are the rights of a tenant under the rent control act?")}
-                                                className="p-4 bg-gradient-to-br from-slate-50 to-slate-100/50 hover:from-slate-100 hover:to-slate-200/50 border border-slate-200 rounded-2xl flex flex-col items-center justify-center text-center transition-all cursor-pointer hover:shadow-sm active:scale-95 group"
-                                            >
-                                                <span className="text-2xl mb-1 group-hover:scale-110 transition-transform">💡</span>
-                                                <span className="text-xs font-bold text-slate-800">Ask a Question</span>
-                                                <span className="text-[10px] text-slate-500 mt-1">Property, Consumer, Wages</span>
-                                            </button>
-                                        </div>
+                    ) : messages.length === 1 ? (
+                        /* CHATGPT-STYLE CENTERED LANDING PAGE */
+                        <div className="flex-1 overflow-y-auto px-4 py-8 md:py-16 scrollbar-thin">
+                            <div className="flex flex-col items-center justify-center min-h-[calc(100vh-14rem)] max-w-6xl mx-auto w-[90%] md:w-[85%] space-y-12 select-none">
+                                {/* Title and branding */}
+                                <div className="text-center space-y-3">
+                                    <div className="w-20 h-20 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white rounded-3xl flex items-center justify-center text-4xl shadow-xl shadow-indigo-150 ring-4 ring-indigo-50/50 mx-auto animate-in zoom-in duration-300">
+                                        ⚖️
                                     </div>
-                                )}
+                                    <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Voice Legal Assistant</h1>
+                                    <p className="text-slate-500 text-xs md:text-sm max-w-md mx-auto leading-relaxed">
+                                        Speak naturally in Hindi, English, Bengali, Tamil, etc. Ask Indian legal queries and receive immediate guidance backed by relevant statutes.
+                                    </p>
+                                </div>
 
-                                {messages.map((msg, index) => (
-                                    <div 
-                                        key={index} 
-                                        className={`group flex gap-3 md:gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
-                                    >
-                                        {/* Avatar */}
-                                        <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 shadow-sm ${
-                                            msg.role === 'user' 
-                                                ? 'bg-gradient-to-tr from-blue-500 to-indigo-500 text-white' 
-                                                : 'bg-indigo-50 text-indigo-600 border border-slate-100'
-                                        }`}>
-                                            {msg.role === 'user' ? '👤' : '⚖️'}
-                                        </div>
-
-                                        {/* Bubble Wrapper */}
-                                        <div className={`flex flex-col max-w-[82%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                                {/* Voice Recorder Component */}
+                                <div className="w-full max-w-md animate-in slide-in-from-bottom-4 duration-300">
+                                    <VoiceInput 
+                                        sessionId={currentSessionId}
+                                        history={messages.slice(1)}
+                                        language={selectedLanguage}
+                                        onUploadStart={() => setIsLoading(true)}
+                                        onUploadSuccess={(transcription, aiResponse, selectedStrategy, caseId, returnedSessionId, laws, emergency) => {
+                                            setIsLoading(false);
+                                            setMessages(prev => [
+                                                ...prev, 
+                                                { role: 'user', content: transcription },
+                                                { 
+                                                    role: 'ai', 
+                                                    content: aiResponse,
+                                                    queryId: caseId,
+                                                    strategy: selectedStrategy,
+                                                    feedback: 'none',
+                                                    laws: laws || [],
+                                                    emergency: emergency
+                                                }
+                                            ]);
                                             
-                                            {/* Bubble Box */}
-                                            <div className={`p-4 rounded-2xl shadow-sm transition-all border ${
+                                            if (!currentSessionId && returnedSessionId) {
+                                                setCurrentSessionId(returnedSessionId);
+                                            }
+                                            loadSessions();
+                                        }}
+                                        onUploadError={() => setIsLoading(false)}
+                                    />
+                                </div>
+                                {/* Text Area Input */}
+                                <div className="w-full max-w-5xl bg-white border border-slate-200 rounded-2xl shadow-lg transition-all focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500/80 p-2.5 pl-4 pr-3.5 flex items-end gap-3 animate-in slide-in-from-bottom-8 duration-500 mt-4">
+                                    {/* Microphone button inside text box */}
+                                    <button 
+                                        type="button"
+                                        onClick={handleMicTrigger}
+                                        className="p-2 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 text-slate-500 hover:text-indigo-600 rounded-xl transition-all cursor-pointer mb-0.5 shrink-0 active:scale-95 flex items-center justify-center"
+                                        title="Speak with Voice Assistant"
+                                    >
+                                        <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 0 3-3v-6a3 3 0 0 0-3-3 3 3 0 0 0-3 3v6a3 3 0 0 0 3 3Z" />
+                                        </svg>
+                                    </button>
+                                    <textarea 
+                                        ref={textareaRef}
+                                        rows="1"
+                                        className="flex-1 bg-transparent border-0 px-3 py-2 focus:outline-none resize-none text-sm text-slate-900 placeholder-slate-500 font-medium min-h-[38px] max-h-[140px] overflow-y-auto leading-relaxed"
+                                        placeholder="Or type your legal query here... (Enter to send)"
+                                        value={input}
+                                        onChange={(e) => setInput(e.target.value)}
+                                        onKeyDown={handleKeyDown}
+                                        disabled={isLoading || isChatLoading}
+                                    />
+                                    <button 
+                                        onClick={handleSend}
+                                        disabled={isLoading || isChatLoading || !input.trim()}
+                                        className="w-10 h-10 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all shadow-md hover:shadow-blue-500/20 active:scale-95 disabled:opacity-30 disabled:pointer-events-none disabled:shadow-none cursor-pointer shrink-0 mb-0.5"
+                                        title="Send Message"
+                                    >
+                                        <svg className="w-4.5 h-4.5 fill-current rotate-90" viewBox="0 0 24 24">
+                                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                {/* Disclaimer */}
+                                <p className="text-[10px] text-center text-slate-450 tracking-wide max-w-sm select-none">
+                                    Disclaimer: NyayaSetu provides automated legal advice for informational purposes. Verify all information with official resources.
+                                </p>
+                            </div>
+                        </div>
+                    ) : (
+                        /* CHAT MODE VIEW */
+                        <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+                            {/* Scrollable messages area */}
+                            <div className="flex-1 p-4 md:p-6 overflow-y-auto space-y-6 scrollbar-thin">
+                                <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300 pb-96">
+                                    {messages.map((msg, index) => (
+                                        <div 
+                                            key={index} 
+                                            className={`group flex gap-3 md:gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
+                                        >
+                                            {/* Avatar */}
+                                            <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 shadow-sm ${
                                                 msg.role === 'user' 
-                                                    ? 'bg-blue-600 text-white rounded-tr-none border-blue-500/10' 
-                                                    : 'bg-white text-slate-850 rounded-tl-none border-slate-100 leading-relaxed'
+                                                    ? 'bg-gradient-to-tr from-blue-500 to-indigo-500 text-white' 
+                                                    : 'bg-indigo-50 text-indigo-600 border border-slate-100'
                                             }`}>
-                                                {msg.role === 'user' ? (
-                                                    <p className="whitespace-pre-wrap text-sm">{msg.content}</p>
-                                                ) : (
-                                                    <div className="markdown-content text-sm space-y-2">
-                                                        
-                                                        {/* Emergency Card Display */}
-                                                        {msg.emergency && msg.emergency.isEmergency && (
-                                                            <div className="mb-4 border-2 border-red-200 bg-red-50/70 p-4 rounded-2xl text-slate-800 animate-in fade-in duration-300">
-                                                                <div className="flex items-center gap-2 mb-2 text-red-600 font-bold text-xs md:text-sm">
-                                                                    <span className="text-lg">🚨</span>
-                                                                    <span>EMERGENCY ASSISTANCE DETECTED</span>
-                                                                </div>
-                                                                <p className="text-[10px] text-slate-500 leading-relaxed mb-3">
-                                                                    Your request contains issues regarding <strong>{msg.emergency.matchedTopic}</strong>. Please reach out to these helpline networks immediately.
-                                                                </p>
-                                                                <div className="grid grid-cols-2 gap-2 text-[10px] mb-3">
-                                                                    {msg.emergency.helplines.map((h, i) => (
-                                                                        <div key={i} className="bg-white border border-red-100 px-2.5 py-1.5 rounded-lg flex items-center justify-between shadow-sm">
-                                                                            <span className="text-slate-500 font-semibold">{h.name}:</span>
-                                                                            <a href={`tel:${h.number}`} className="font-bold text-red-600 hover:underline">{h.number}</a>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                                <div className="flex flex-wrap gap-2 text-[10px]">
-                                                                    <button
-                                                                        onClick={handleEmergencyNearbySearch}
-                                                                        className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg cursor-pointer flex items-center gap-1 transition-all shadow-sm active:scale-95"
-                                                                    >
-                                                                        📍 Find Nearby Police Station
-                                                                    </button>
-                                                                    {msg.emergency.portals.map((p, i) => (
-                                                                        <a
-                                                                            key={i}
-                                                                            href={p.url}
-                                                                            target="_blank"
-                                                                            rel="noopener noreferrer"
-                                                                            className="px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-655 font-bold rounded-lg cursor-pointer flex items-center gap-1 transition-all shadow-sm"
-                                                                        >
-                                                                            🌐 {p.name}
-                                                                        </a>
-                                                                    ))}
-                                                                </div>
-                                                            </div>
-                                                        )}
+                                                {msg.role === 'user' ? '👤' : '⚖️'}
+                                            </div>
 
-                                                        {/* Guidance Text */}
-                                                        <ReactMarkdown
-                                                            components={{
-                                                                h1: ({node, ...props}) => <h1 className="text-lg font-bold text-slate-900 my-2" {...props} />,
-                                                                h2: ({node, ...props}) => <h2 className="text-base font-bold text-slate-900 my-2" {...props} />,
-                                                                h3: ({node, ...props}) => <h3 className="text-sm font-bold text-slate-800 my-1" {...props} />,
-                                                                p: ({node, ...props}) => <p className="mb-2 last:mb-0 leading-relaxed text-slate-700" {...props} />,
-                                                                ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-2 space-y-1 text-slate-700" {...props} />,
-                                                                ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-2 space-y-1 text-slate-700" {...props} />,
-                                                                li: ({node, ...props}) => <li className="mb-0.5" {...props} />,
-                                                                a: ({node, ...props}) => <a className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
-                                                                code: ({node, ...props}) => <code className="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-xs text-pink-600" {...props} />,
-                                                                pre: ({node, ...props}) => <pre className="bg-slate-50 border border-slate-200 p-3 rounded-lg overflow-x-auto my-2 font-mono text-xs text-slate-800" {...props} />
-                                                            }}
-                                                        >
-                                                            {msg.content || ''}
-                                                        </ReactMarkdown>
-
-                                                        {/* Collapsible Laws Card */}
-                                                        {msg.laws && msg.laws.length > 0 && (
-                                                            <div className="mt-4 pt-3 border-t border-slate-100">
-                                                                <button
-                                                                    onClick={() => toggleLawsPanel(index)}
-                                                                    className="w-full flex items-center justify-between text-[11px] font-bold text-slate-700 hover:text-blue-600 transition-colors py-1 cursor-pointer bg-slate-50 hover:bg-slate-100/50 px-3 py-1.5 rounded-xl border border-slate-100"
-                                                                >
-                                                                    <div className="flex items-center gap-1.5">
-                                                                        <span>⚖️</span>
-                                                                        <span>Applicable Indian Laws ({msg.laws.length})</span>
+                                            {/* Bubble Wrapper */}
+                                            <div className={`flex flex-col max-w-[82%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                                                
+                                                {/* Bubble Box */}
+                                                <div className={`p-4 rounded-2xl shadow-sm transition-all border ${
+                                                    msg.role === 'user' 
+                                                        ? 'bg-blue-600 text-white rounded-tr-none border-blue-500/10' 
+                                                        : 'bg-white text-slate-850 rounded-tl-none border-slate-100 leading-relaxed'
+                                                }`}>
+                                                    {msg.role === 'user' ? (
+                                                        <p className="whitespace-pre-wrap text-sm">{msg.content}</p>
+                                                    ) : (
+                                                        <div className="markdown-content text-sm space-y-2">
+                                                            
+                                                            {/* Emergency Card Display */}
+                                                            {msg.emergency && msg.emergency.isEmergency && (
+                                                                <div className="mb-4 border-2 border-red-200 bg-red-50/70 p-4 rounded-2xl text-slate-800 animate-in fade-in duration-300">
+                                                                    <div className="flex items-center gap-2 mb-2 text-red-655 font-bold text-xs md:text-sm">
+                                                                        <span className="text-lg">🚨</span>
+                                                                        <span>EMERGENCY ASSISTANCE DETECTED</span>
                                                                     </div>
-                                                                    <span className="text-slate-400 font-semibold text-[10px]">
-                                                                        {expandedLaws[index] ? '▼ Hide' : '▲ Show Laws'}
-                                                                    </span>
-                                                                </button>
-                                                                
-                                                                {expandedLaws[index] && (
-                                                                    <div className="mt-3.5 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                                                                        {msg.laws.map((law, lawIdx) => (
-                                                                            <div 
-                                                                                key={lawIdx} 
-                                                                                className="bg-slate-50/50 border border-slate-100 p-3 rounded-xl flex flex-col justify-between gap-2 shadow-sm"
-                                                                            >
-                                                                                <div>
-                                                                                    <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
-                                                                                        <h5 className="font-bold text-slate-800 text-[11px]">
-                                                                                            {law.name}
-                                                                                        </h5>
-                                                                                        <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[9px] font-bold font-mono">
-                                                                                            {law.section || 'General'}
-                                                                                        </span>
-                                                                                    </div>
-                                                                                    <p className="text-slate-600 text-[10px] leading-relaxed">
-                                                                                        {law.explanation}
-                                                                                    </p>
-                                                                                </div>
-                                                                                <div className="flex items-center gap-2 pt-1 border-t border-slate-100/50">
-                                                                                    <a
-                                                                                        href={law.officialLink}
-                                                                                        target="_blank"
-                                                                                        rel="noopener noreferrer"
-                                                                                        className="px-2.5 py-1 bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-300 text-blue-600 font-bold rounded-lg text-[9px] cursor-pointer transition-all shrink-0 flex items-center gap-1"
-                                                                                    >
-                                                                                        🌐 Read More (Government Link)
-                                                                                    </a>
-                                                                                </div>
+                                                                    <p className="text-[10px] text-slate-500 leading-relaxed mb-3">
+                                                                        Your request contains issues regarding <strong>{msg.emergency.matchedTopic}</strong>. Please reach out to these helpline networks immediately.
+                                                                    </p>
+                                                                    <div className="grid grid-cols-2 gap-2 text-[10px] mb-3">
+                                                                        {msg.emergency.helplines.map((h, i) => (
+                                                                            <div key={i} className="bg-white border border-red-100 px-2.5 py-1.5 rounded-lg flex items-center justify-between shadow-sm">
+                                                                                <span className="text-slate-500 font-semibold">{h.name}:</span>
+                                                                                <a href={`tel:${h.number}`} className="font-bold text-red-655 hover:underline">{h.number}</a>
                                                                             </div>
                                                                         ))}
                                                                     </div>
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                        
-                                                        {/* Strategy and Action Bar */}
-                                                        {msg.queryId && (
-                                                            <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-[10px] text-slate-400">
-                                                                {msg.strategy && (
-                                                                    <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-500 font-mono font-medium">
-                                                                        Strategy: {msg.strategy}
-                                                                    </span>
-                                                                )}
-                                                                <div className="flex items-center gap-3 ml-auto shrink-0">
-                                                                    {/* Thumbs Up */}
-                                                                    <button 
-                                                                        disabled={msg.feedback && msg.feedback !== 'none'}
-                                                                        onClick={() => handleFeedback(index, msg.queryId, 'helpful')}
-                                                                        className={`p-1 rounded-lg border transition-all cursor-pointer ${
-                                                                            msg.feedback === 'helpful'
-                                                                                ? 'bg-green-50 border-green-200 text-green-600'
-                                                                                : 'border-slate-200 hover:bg-slate-50 text-slate-500'
+                                                                    <div className="flex flex-wrap gap-2 text-[10px]">
+                                                                        <button
+                                                                            onClick={handleEmergencyNearbySearch}
+                                                                            className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg cursor-pointer flex items-center gap-1 transition-all shadow-sm active:scale-95"
+                                                                        >
+                                                                            📍 Find Nearby Police Station
+                                                                        </button>
+                                                                        {msg.emergency.portals.map((p, i) => (
+                                                                            <a
+                                                                                key={i}
+                                                                                href={p.url}
+                                                                                target="_blank"
+                                                                                rel="noopener noreferrer"
+                                                                                className="px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-655 font-bold rounded-lg cursor-pointer flex items-center gap-1 transition-all shadow-sm"
+                                                                            >
+                                                                                🌐 {p.name}
+                                                                            </a>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+
+                                                            {/* Guidance Text */}
+                                                            <ReactMarkdown
+                                                                components={{
+                                                                    h1: ({node, ...props}) => <h1 className="text-lg font-bold text-slate-900 my-2" {...props} />,
+                                                                    h2: ({node, ...props}) => <h2 className="text-base font-bold text-slate-900 my-2" {...props} />,
+                                                                    h3: ({node, ...props}) => <h3 className="text-sm font-bold text-slate-800 my-1" {...props} />,
+                                                                    p: ({node, ...props}) => <p className="mb-2 last:mb-0 leading-relaxed text-slate-700" {...props} />,
+                                                                    ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-2 space-y-1 text-slate-700" {...props} />,
+                                                                    ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-2 space-y-1 text-slate-700" {...props} />,
+                                                                    li: ({node, ...props}) => <li className="mb-0.5" {...props} />,
+                                                                    a: ({node, ...props}) => <a className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
+                                                                    code: ({node, ...props}) => <code className="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-xs text-pink-600" {...props} />,
+                                                                    pre: ({node, ...props}) => <pre className="bg-slate-50 border border-slate-200 p-3 rounded-lg overflow-x-auto my-2 font-mono text-xs text-slate-800" {...props} />
+                                                                }}
+                                                            >
+                                                                {msg.content || ''}
+                                                            </ReactMarkdown>
+
+                                                            {/* Collapsible Laws Card */}
+                                                            {msg.laws && msg.laws.length > 0 && (
+                                                                <div className="mt-4 pt-3 border-t border-slate-100">
+                                                                    <button
+                                                                        onClick={() => toggleLawsPanel(index)}
+                                                                        className="w-full flex items-center justify-between text-[11px] font-bold text-slate-700 hover:text-blue-600 transition-colors py-1 cursor-pointer bg-slate-50 hover:bg-slate-100/50 px-3 py-1.5 rounded-xl border border-slate-100"
+                                                                    >
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <span>⚖️</span>
+                                                                            <span>Applicable Indian Laws ({msg.laws.length})</span>
+                                                                        </div>
+                                                                        <span className="text-slate-400 font-semibold text-[10px]">
+                                                                            {expandedLaws[index] ? '▼ Hide' : '▲ Show Laws'}
+                                                                        </span>
+                                                                    </button>
+                                                                    
+                                                                    {expandedLaws[index] && (
+                                                                        <div className="mt-3.5 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                                                                            {msg.laws.map((law, lawIdx) => (
+                                                                                <div 
+                                                                                    key={lawIdx} 
+                                                                                    className="bg-slate-50/50 border border-slate-100 p-3 rounded-xl flex flex-col justify-between gap-2 shadow-sm"
+                                                                                >
+                                                                                    <div>
+                                                                                        <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                                                                                            <h5 className="font-bold text-slate-800 text-[11px]">
+                                                                                                {law.name}
+                                                                                            </h5>
+                                                                                            <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[9px] font-bold font-mono">
+                                                                                                {law.section || 'General'}
+                                                                                            </span>
+                                                                                        </div>
+                                                                                        <p className="text-slate-600 text-[10px] leading-relaxed">
+                                                                                            {law.explanation}
+                                                                                        </p>
+                                                                                    </div>
+                                                                                    <div className="flex items-center gap-2 pt-1 border-t border-slate-100/50">
+                                                                                        <a
+                                                                                            href={law.officialLink}
+                                                                                            target="_blank"
+                                                                                            rel="noopener noreferrer"
+                                                                                            className="px-2.5 py-1 bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-300 text-blue-600 font-bold rounded-lg text-[9px] cursor-pointer transition-all shrink-0 flex items-center gap-1"
+                                                                                        >
+                                                                                            🌐 Read More (Government Link)
+                                                                                        </a>
+                                                                                    </div>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                            
+                                                            {/* Strategy and Action Bar */}
+                                                            {msg.queryId && (
+                                                                <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-[10px] text-slate-400">
+                                                                    {msg.strategy && (
+                                                                        <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-500 font-mono font-medium">
+                                                                            Strategy: {msg.strategy}
+                                                                        </span>
+                                                                    )}
+                                                                    <div className="flex items-center gap-3 ml-auto shrink-0">
+                                                                        {/* Thumbs Up */}
+                                                                        <button 
+                                                                            disabled={msg.feedback && msg.feedback !== 'none'}
+                                                                            onClick={() => handleFeedback(index, msg.queryId, 'helpful')}
+                                                                            className={`p-1 rounded-lg border transition-all cursor-pointer ${
+                                                                                msg.feedback === 'helpful'
+                                                                                    ? 'bg-green-50 border-green-200 text-green-600'
+                                                                                    : 'border-slate-200 hover:bg-slate-50 text-slate-500'
                                                                         }`}
                                                                         title="Helpful"
                                                                     >
@@ -724,7 +786,7 @@ const VoiceInputPage = () => {
                                                                         onClick={() => handleFeedback(index, msg.queryId, 'not-helpful')}
                                                                         className={`p-1 rounded-lg border transition-all cursor-pointer ${
                                                                             msg.feedback === 'not-helpful'
-                                                                                ? 'bg-red-50 border-red-200 text-red-600'
+                                                                                ? 'bg-red-50 border-red-200 text-red-650'
                                                                                 : 'border-slate-200 hover:bg-slate-50 text-slate-500'
                                                                         }`}
                                                                         title="Not Helpful"
@@ -754,18 +816,6 @@ const VoiceInputPage = () => {
                                                                                 <span className="text-[10px]">Copy</span>
                                                                             </>
                                                                         )}
-                                                                        
-                                                                        {/* Tooltip */}
-                                                                        {copyStatus.index === index && (
-                                                                            <span className={`absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 px-2.5 py-1 text-[10px] font-semibold text-white rounded shadow-md pointer-events-none whitespace-nowrap animate-in fade-in duration-200 z-10 ${
-                                                                                copyStatus.type === 'success' ? 'bg-slate-800' : 'bg-red-600'
-                                                                            }`}>
-                                                                                {copyStatus.type === 'success' ? 'Answer copied!' : 'Unable to copy. Please try again.'}
-                                                                                <span className={`absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent ${
-                                                                                    copyStatus.type === 'success' ? 'border-t-slate-800' : 'border-t-red-600'
-                                                                                }`}></span>
-                                                                            </span>
-                                                                        )}
                                                                     </button>
                                                                 </div>
                                                             </div>
@@ -779,7 +829,7 @@ const VoiceInputPage = () => {
                                                 <div className="mt-1.5 flex items-center justify-end">
                                                     <button 
                                                         onClick={() => handleCopy(msg.content, index)}
-                                                        className="opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 transition-opacity duration-200 px-2.5 py-0.5 rounded-lg border border-slate-200 bg-white text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-all flex items-center gap-1.5 text-[10px] cursor-pointer focus:ring-2 focus:ring-blue-500 focus:outline-none relative"
+                                                        className="opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 transition-opacity duration-200 px-2.5 py-0.5 rounded-lg border border-slate-200 bg-white text-slate-400 hover:bg-slate-50 hover:text-slate-655 transition-all flex items-center gap-1.5 text-[10px] cursor-pointer focus:ring-2 focus:ring-blue-500 focus:outline-none relative"
                                                         aria-label="Copy question"
                                                         title="Copy question"
                                                     >
@@ -799,161 +849,110 @@ const VoiceInputPage = () => {
                                                                 <span>Copy</span>
                                                             </>
                                                         )}
-                                                        
-                                                        {/* Tooltip */}
-                                                        {copyStatus.index === index && (
-                                                            <span className={`absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 px-2.5 py-1 text-[10px] font-semibold text-white rounded shadow-md pointer-events-none whitespace-nowrap animate-in fade-in duration-200 z-10 ${
-                                                                copyStatus.type === 'success' ? 'bg-slate-800' : 'bg-red-600'
-                                                            }`}>
-                                                                {copyStatus.type === 'success' ? 'Question copied!' : 'Unable to copy. Please try again.'}
-                                                                <span className={`absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent ${
-                                                                    copyStatus.type === 'success' ? 'border-t-slate-800' : 'border-t-red-600'
-                                                                }`}></span>
-                                                            </span>
-                                                        )}
                                                     </button>
                                                 </div>
                                             )}
                                         </div>
                                     </div>
-                                ))}
-                                
-                                {/* Standard loading response indicator */}
-                                {isLoading && (
-                                    <div className="flex gap-4 items-start">
-                                        <div className="w-9 h-9 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 shadow-sm border border-slate-100">
-                                            ⚖️
+                                    ))}
+                                    
+                                    {isLoading && (
+                                        <div className="flex gap-4 items-start animate-in fade-in duration-300">
+                                            <div className="w-9 h-9 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 shadow-sm border border-slate-100">
+                                                ⚖️
+                                            </div>
+                                            <div className="bg-white border border-slate-100 p-4 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-1.5">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-indigo-600 pulse-dot" style={{ animationDelay: '0ms' }} />
+                                                <div className="w-1.5 h-1.5 rounded-full bg-indigo-600 pulse-dot" style={{ animationDelay: '150ms' }} />
+                                                <div className="w-1.5 h-1.5 rounded-full bg-indigo-600 pulse-dot" style={{ animationDelay: '300ms' }} />
+                                                <span className="text-xs text-slate-400 ml-2 select-none">Advisor is thinking...</span>
+                                            </div>
                                         </div>
-                                        <div className="bg-white border border-slate-100 p-4 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-1.5">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-600 pulse-dot" style={{ animationDelay: '0ms' }} />
-                                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-600 pulse-dot" style={{ animationDelay: '150ms' }} />
-                                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-600 pulse-dot" style={{ animationDelay: '300ms' }} />
-                                            <span className="text-xs text-slate-400 ml-2 select-none">Advisor is thinking...</span>
-                                        </div>
+                                    )}
+                                    <div ref={messagesEndRef} />
+                                </div>
+                            </div>
+
+                            {/* Sticky bottom voice recorder + input bar */}
+                            <div className="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-slate-50 via-slate-50/90 to-transparent pt-10 shrink-0 z-20">
+                                <div className="max-w-4xl mx-auto space-y-4 w-full">
+                                    
+                                    {/* Expanded Voice Input at the bottom */}
+                                    <div className="shadow-lg rounded-3xl overflow-hidden border border-slate-150 max-w-xl mx-auto">
+                                        <VoiceInput 
+                                            sessionId={currentSessionId}
+                                            history={messages.slice(1)}
+                                            language={selectedLanguage}
+                                            compact={true}
+                                            onUploadStart={() => setIsLoading(true)}
+                                            onUploadSuccess={(transcription, aiResponse, selectedStrategy, caseId, returnedSessionId, laws, emergency) => {
+                                                setIsLoading(false);
+                                                setMessages(prev => [
+                                                    ...prev, 
+                                                    { role: 'user', content: transcription },
+                                                    { 
+                                                        role: 'ai', 
+                                                        content: aiResponse,
+                                                        queryId: caseId,
+                                                        strategy: selectedStrategy,
+                                                        feedback: 'none',
+                                                        laws: laws || [],
+                                                        emergency: emergency
+                                                    }
+                                                ]);
+                                                
+                                                if (!currentSessionId && returnedSessionId) {
+                                                    setCurrentSessionId(returnedSessionId);
+                                                }
+                                                loadSessions();
+                                            }}
+                                            onUploadError={() => setIsLoading(false)}
+                                        />
                                     </div>
-                                )}
-                                <div ref={messagesEndRef} />
+
+                                    {/* Text Input */}
+                                    <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500/80 p-2.5 pl-4 pr-3.5 flex items-end gap-3">
+                                        {/* Microphone button inside text box */}
+                                        <button 
+                                            type="button"
+                                            onClick={handleMicTrigger}
+                                            className="p-2 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 text-slate-500 hover:text-indigo-600 rounded-xl transition-all cursor-pointer mb-0.5 shrink-0 active:scale-95 flex items-center justify-center"
+                                            title="Speak with Voice Assistant"
+                                        >
+                                            <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 0 3-3v-6a3 3 0 0 0-3-3 3 3 0 0 0-3 3v6a3 3 0 0 0 3 3Z" />
+                                            </svg>
+                                        </button>
+                                        <textarea 
+                                            ref={textareaRef}
+                                            rows="1"
+                                            className="flex-1 bg-transparent border-0 px-3 py-2 focus:outline-none resize-none text-sm text-slate-900 placeholder-slate-500 font-medium min-h-[38px] max-h-[140px] overflow-y-auto leading-relaxed"
+                                            placeholder="Type your legal query here... (Enter to send)"
+                                            value={input}
+                                            onChange={(e) => setInput(e.target.value)}
+                                            onKeyDown={handleKeyDown}
+                                            disabled={isLoading || isChatLoading}
+                                        />
+                                        <button 
+                                            onClick={handleSend}
+                                            disabled={isLoading || isChatLoading || !input.trim()}
+                                            className="w-10 h-10 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all shadow-md hover:shadow-blue-500/20 active:scale-95 disabled:opacity-30 disabled:pointer-events-none disabled:shadow-none cursor-pointer shrink-0 mb-0.5"
+                                            title="Send Message"
+                                        >
+                                            <svg className="w-4.5 h-4.5 fill-current rotate-90" viewBox="0 0 24 24">
+                                                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                                            </svg>
+                                        </button>
+                                    </div>
+
+                                    {/* Disclaimer */}
+                                    <p className="text-[10px] text-center text-slate-450 tracking-wide select-none">
+                                        Disclaimer: NyayaSetu provides automated legal advice for informational purposes. Verify all information with official resources.
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     )}
-
-                    {/* Bottom Fixed Input Box Container */}
-                    <div className="p-4 bg-transparent shrink-0">
-                        <div className="max-w-4xl mx-auto">
-                            
-                            {/* VOICE RECORDING CONTAINER OVERLAY */}
-                            {isVoicePanelOpen && (
-                                <div className="mb-3.5 bg-white border border-slate-200 p-4 rounded-2xl shadow-lg relative animate-in slide-in-from-bottom-4 duration-300">
-                                    <button
-                                        onClick={() => setIsVoicePanelOpen(false)}
-                                        className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-all cursor-pointer z-10"
-                                        title="Close Voice Input"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                    </button>
-                                    <VoiceInput 
-                                        sessionId={currentSessionId}
-                                        history={messages.slice(1)}
-                                        language={selectedLanguage}
-                                        onUploadStart={() => setIsLoading(true)}
-                                        onUploadSuccess={(transcription, aiResponse, selectedStrategy, caseId, returnedSessionId, laws, emergency) => {
-                                            setIsLoading(false);
-                                            setIsVoicePanelOpen(false); // Auto close voice panel on success
-                                            setMessages(prev => [
-                                                ...prev, 
-                                                { role: 'user', content: transcription },
-                                                { 
-                                                    role: 'ai', 
-                                                    content: aiResponse,
-                                                    queryId: caseId,
-                                                    strategy: selectedStrategy,
-                                                    feedback: 'none',
-                                                    laws: laws || [],
-                                                    emergency: emergency
-                                                }
-                                            ]);
-                                            
-                                            // Handle setting sessionId for new chat session
-                                            if (!currentSessionId && returnedSessionId) {
-                                                setCurrentSessionId(returnedSessionId);
-                                            }
-                                            // Reload sessions list
-                                            loadSessions();
-                                        }}
-                                        onUploadError={() => setIsLoading(false)}
-                                    />
-                                </div>
-                            )}
-
-                            {/* POPULAR LEGAL QUESTIONS SUGGESTION BAR */}
-                            <div className="mb-2.5">
-                                <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block mb-1 px-1">
-                                    💡 Popular Legal Questions
-                                </span>
-                                <div className="flex gap-2 overflow-x-auto pb-1.5 scrollbar-thin whitespace-nowrap">
-                                    {POPULAR_QUESTIONS.map((q, idx) => (
-                                        <button
-                                            key={idx}
-                                            onClick={() => setInput(q.text)}
-                                            className="px-3.5 py-1.5 rounded-full bg-white hover:bg-blue-50 border border-slate-200 text-slate-700 text-xs font-medium hover:text-blue-600 hover:border-blue-300 transition-all shadow-sm active:scale-95 cursor-pointer flex items-center gap-1.5"
-                                        >
-                                            <span>{q.icon}</span>
-                                            <span>{q.label}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Text & Action Control Container */}
-                            <div className="bg-white border border-slate-200 rounded-2xl shadow-lg transition-all focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500/80 p-2 pr-3 flex items-end gap-2.5">
-                                
-                                {/* Auto-growing Text Input */}
-                                <textarea 
-                                    ref={textareaRef}
-                                    rows="1"
-                                    className="flex-1 bg-transparent border-0 px-3 py-2 focus:outline-none resize-none text-sm text-slate-800 placeholder-slate-400 min-h-[38px] max-h-[140px] overflow-y-auto leading-relaxed"
-                                    placeholder="Type your legal query here... (Enter to send)"
-                                    value={input}
-                                    onChange={(e) => setInput(e.target.value)}
-                                    onKeyDown={handleKeyDown}
-                                    disabled={isLoading || isChatLoading}
-                                />
-
-                                {/* Voice Input Toggle Button */}
-                                <button
-                                    onClick={() => setIsVoicePanelOpen(prev => !prev)}
-                                    className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all cursor-pointer mb-0.5 shrink-0 active:scale-95 border ${
-                                        isVoicePanelOpen 
-                                            ? 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100/50' 
-                                            : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                                    }`}
-                                    title="Voice Input"
-                                >
-                                    <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                                        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z" />
-                                    </svg>
-                                </button>
-
-                                {/* Send Button */}
-                                <button 
-                                    onClick={handleSend}
-                                    disabled={isLoading || isChatLoading || !input.trim()}
-                                    className="w-10 h-10 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all shadow-md hover:shadow-blue-500/20 active:scale-95 disabled:opacity-30 disabled:pointer-events-none disabled:shadow-none cursor-pointer shrink-0 mb-0.5"
-                                    title="Send Message"
-                                >
-                                    <svg className="w-4.5 h-4.5 fill-current rotate-90" viewBox="0 0 24 24">
-                                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-                                    </svg>
-                                </button>
-                            </div>
-
-                            <p className="text-[10px] text-center text-slate-450 mt-2 tracking-wide">
-                                Disclaimer: NyayaSetu provides automated legal advice for informational purposes. Verify all information with official resources.
-                            </p>
-                        </div>
-                    </div>
             {isLocationModalOpen && (
                 <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden border border-slate-100 animate-in fade-in zoom-in-95 duration-200">

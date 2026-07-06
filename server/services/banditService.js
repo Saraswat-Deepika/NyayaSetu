@@ -300,7 +300,7 @@ const incrementSelection = async (category, armName) => {
 /**
  * Handles RAG search and passes results as context to Gemini.
  */
-const executeRAGStrategy = async (query, language) => {
+const executeRAGStrategy = async (query, context, language) => {
     if (process.env.MOCK_AI === 'true') {
         console.log('🧪 [MOCK RAG] Generating mock RAG response');
         return `### Problem Understanding
@@ -324,17 +324,13 @@ Based on the retrieved legal documents, you need to report the incident and prot
 This is a mock RAG response for testing.`;
     }
 
-    const docs = await searchRelevantDocs(query);
-    if (!docs || docs.length === 0) {
-        console.log("ℹ️ No relevant RAG documents found. Falling back to direct LLM answer.");
-        return null; // Return null so caller falls back to direct LLM
-    }
-
-    const context = docs.map((d, i) => `[Document ${i + 1}]:\n${d.pageContent}`).join('\n\n');
     const systemPrompt = `You are NyayaSetu, an AI Legal Assistant for India.
 CRITICAL: Every URL, website address, or link you mention MUST be strictly formatted as clickable markdown links, e.g. [Cyber Crime Portal](https://cybercrime.gov.in/) or [Women Helpline Portal](http://www.ncwhelpline.in/). Never write raw, unclickable links like "https://cybercrime.gov.in/" or "cybercrime.gov.in". Make sure the links are 100% correct official portals.
-You must answer the user's legal question strictly based on the provided document context.
-If the context does not contain enough information, provide standard legal information while mentioning you did not find direct document matches.
+You must answer the user's legal question strictly based ONLY on the provided document context.
+Do not add any unsupported legal facts, do not guess, and do not fabricate any information.
+
+If the provided context does not contain relevant information to answer the user's specific query, you MUST respond with exactly the following message and nothing else:
+"I couldn't find this specific information in the current legal database."
 
 Format your output under these exact headings and nothing else:
 ### Problem Understanding
@@ -345,7 +341,7 @@ Format your output under these exact headings and nothing else:
 ### Authorities to Contact
 ### Disclaimer (Include a standard legal disclaimer)
 
-Respond in the language: ${language || 'English'}.`;
+Respond in the language: ${language || 'English'}. If the requested language is not English, translate the response (including headings and fallback message if triggered) into the target language.`;
 
     return await generateContentWithFallback(`Context:\n${context}\n\nQuestion: ${query}`, systemPrompt);
 };
@@ -353,7 +349,7 @@ Respond in the language: ${language || 'English'}.`;
 /**
  * Retrieves past similar cases of the same category.
  */
-const executeSimilarCaseStrategy = async (query, category, language) => {
+const executeSimilarCaseStrategy = async (query, category, context, language) => {
     if (process.env.MOCK_AI === 'true') {
         console.log('🧪 [MOCK SIMILAR CASE] Generating mock similar case response');
         return `### Problem Understanding
@@ -393,10 +389,16 @@ This is a mock response comparing past similar cases.`;
 
     const systemPrompt = `You are NyayaSetu, an AI Legal Assistant for India.
 CRITICAL: Every URL, website address, or link you mention MUST be strictly formatted as clickable markdown links, e.g. [Cyber Crime Portal](https://cybercrime.gov.in/) or [Women Helpline Portal](http://www.ncwhelpline.in/). Never write raw, unclickable links like "https://cybercrime.gov.in/" or "cybercrime.gov.in". Make sure the links are 100% correct official portals.
-Provide legal guidance on the user's situation by drawing comparison/reference from these past cases we processed:
+You must answer the user's legal question strictly based ONLY on the provided document context, by comparing/referencing these past resolved cases:
 ${caseContext}
 
-Highlight how their situation is similar or different, and what standard steps should be taken.
+Document Context:
+${context}
+
+Do not add any unsupported legal facts, do not guess, and do not fabricate any information.
+If the provided context/cases do not contain relevant information to answer the user's specific query, you MUST respond with exactly the following message and nothing else:
+"I couldn't find this specific information in the current legal database."
+
 Format your output under these exact headings and nothing else:
 ### Problem Understanding
 ### Relevant Law
@@ -406,7 +408,7 @@ Format your output under these exact headings and nothing else:
 ### Authorities to Contact
 ### Disclaimer (Include a standard legal disclaimer)
 
-Respond in the language: ${language || 'English'}.`;
+Respond in the language: ${language || 'English'}. If the requested language is not English, translate the response (including headings and fallback message if triggered) into the target language.`;
 
     return await generateContentWithFallback(`User Query: ${query}`, systemPrompt);
 };
@@ -414,7 +416,7 @@ Respond in the language: ${language || 'English'}.`;
 /**
  * Customizes a legal template for the user query using Gemini.
  */
-const executeLegalTemplateStrategy = async (query, category, language) => {
+const executeLegalTemplateStrategy = async (query, category, context, language) => {
     const template = LEGAL_TEMPLATES[category];
     if (!template) {
         console.log(`ℹ️ No legal template found for category ${category}. Falling back to direct LLM.`);
@@ -460,10 +462,17 @@ This is a customized template mock response for testing.`;
 
     const systemPrompt = `You are NyayaSetu, an AI Legal Assistant for India.
 CRITICAL: Every URL, website address, or link you mention MUST be strictly formatted as clickable markdown links, e.g. [Cyber Crime Portal](https://cybercrime.gov.in/) or [Women Helpline Portal](http://www.ncwhelpline.in/). Never write raw, unclickable links like "https://cybercrime.gov.in/" or "cybercrime.gov.in". Make sure the links are 100% correct official portals.
-You must answer the user's legal question contextually, and also customize the following legal template for their specific situation:
+You must answer the user's legal question contextually based ONLY on the provided document context, and also customize the following legal template for their specific situation:
 ---
 ${template}
 ---
+
+Document Context:
+${context}
+
+Do not add any unsupported legal facts, do not guess, and do not fabricate any information.
+If the provided context does not contain relevant information to answer the user's specific query, you MUST respond with exactly the following message and nothing else:
+"I couldn't find this specific information in the current legal database."
 
 Instructions:
 1. Answer the user's specific legal question contextually.
@@ -478,7 +487,7 @@ Instructions:
 ### Disclaimer (Include a standard legal disclaimer)
 
 4. Integrate the customized template text directly under "### Suggested Actions (Step-by-step)" so the user can copy it easily.
-5. Respond in the language: ${language || 'English'}. Ensure the entire response (including explanation and layout headings) is returned in this language.`;
+5. Respond in the language: ${language || 'English'}. If the requested language is not English, translate the response (including headings, customized template, and fallback message if triggered) into the target language.`;
 
     return await generateContentWithFallback(`User Query: ${query}`, systemPrompt);
 };
@@ -489,15 +498,23 @@ Instructions:
 const generateAnswerByStrategy = async (strategy, query, category, history, language) => {
     console.log(`🏗️ Generating answer using strategy: ${strategy}`);
     
+    // Step 1: Check whether the user's query can be answered using the legal database/RAG context
+    const docs = await searchRelevantDocs(query);
+    if (!docs || docs.length === 0) {
+        console.log("ℹ️ No documents retrieved in banditService. Returning database unavailable message.");
+        return "I couldn't find this specific information in the current legal database.";
+    }
+
+    const context = docs.map((d, i) => `[Document ${i + 1}]:\n${d.pageContent}`).join('\n\n');
     let answerText = null;
 
     try {
         if (strategy === 'RAG') {
-            answerText = await executeRAGStrategy(query, language);
+            answerText = await executeRAGStrategy(query, context, language);
         } else if (strategy === 'LegalTemplate') {
-            answerText = await executeLegalTemplateStrategy(query, category, language);
+            answerText = await executeLegalTemplateStrategy(query, category, context, language);
         } else if (strategy === 'SimilarCase') {
-            answerText = await executeSimilarCaseStrategy(query, category, language);
+            answerText = await executeSimilarCaseStrategy(query, category, context, language);
         }
 
         // If strategy-specific generator returned null or failed, fall back to direct Gemini LLM Answer
@@ -524,33 +541,29 @@ You are facing a legal query of category ${category}.
 ### Disclaimer
 This is a fallback mock response for testing.`;
             }
-            // Standard system instruction from legalController
+            // Standard system instruction from legalController, modified to use context strictly
             const systemInstruction = `You are NyayaSetu, an AI Legal Assistant for India.
+CRITICAL: Every URL, website address, or link you mention MUST be strictly formatted as clickable markdown links, e.g. [Cyber Crime Portal](https://cybercrime.gov.in/) or [Women Helpline Portal](http://www.ncwhelpline.in/). Never write raw, unclickable links like "https://cybercrime.gov.in/" or "cybercrime.gov.in". Make sure the links are 100% correct official portals.
+You must answer the user's legal question strictly based ONLY on the provided document context.
+Do not add any unsupported legal facts, do not guess, and do not fabricate any information.
+
+If the provided context does not contain relevant information to answer the user's specific query, you MUST respond with exactly the following message and nothing else:
+"I couldn't find this specific information in the current legal database."
+
 Provide ONLY the absolute necessary information. Do not include any conversational filler, introductory text, or extra context.
 Use short, simple sentences and clear bullet points or step-by-step lists. It must be extremely easy for a common citizen to understand.
-Respond in the language: ${language || 'English'}. Ensure the entire response (including explanation and layout headings) is returned in this language.
+Respond in the language: ${language || 'English'}. Ensure the entire response (including explanation, headings, and fallback message if triggered) is returned in this language.
 You MUST format your output under these exact headings and nothing else:
 ### Problem Understanding
-(Write 1-2 short bullet points explaining the core issue)
-
 ### Relevant Law
-(List only the direct applicable Acts/Sections in a bulleted list)
-
 ### Suggested Actions (Step-by-step)
-(Provide a clear, detailed, and chronological step-by-step checklist of immediate practical actions the user should take. Crucially, the very first step must be the immediate action required for the specific situation. For example, if the issue is a crime or lost/stolen belongings, the first step must explicitly guide them to visit the nearest police station or use a citizen portal to file a lost report, complaint, or FIR. Adapt the sequence of steps to fit the user's specific problem.)
-
 ### Required Documents
-(List only the required documents in a bulleted list)
-
 ### Authorities to Contact
-(List the specific police station, court, or office to contact in a bulleted list)
+### Disclaimer`;
 
-### Disclaimer
-(Include a short, standard 1-sentence legal disclaimer)`;
+            const promptConstraint = `\n\n[INSTRUCTION: Answer clearly and concisely using ONLY the provided document context. Under the 'Suggested Actions (Step-by-step)' heading, provide a complete, logical step-by-step list of actions. Keep the entire response under 300 words total. Do not include any introductory text, warnings, or conversational filler. Start directly with the headings. It must be very easy for a common citizen to understand.]`;
 
-            const promptConstraint = `\n\n[INSTRUCTION: Answer clearly and concisely. Under the 'Suggested Actions (Step-by-step)' heading, provide a complete, logical step-by-step list of actions, showing exactly what to do first, second, etc., tailored to the user's specific problem. Keep the entire response under 300 words total. Do not include any introductory text, warnings, or conversational filler. Start directly with the headings. It must be very easy for a common citizen to understand.]`;
-
-            answerText = await generateContentWithFallback(`${query}${promptConstraint}`, systemInstruction);
+            answerText = await generateContentWithFallback(`Context:\n${context}\n\nUser Query: ${query}${promptConstraint}`, systemInstruction);
         }
 
         return answerText;
