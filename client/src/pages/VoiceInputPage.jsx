@@ -1,16 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { 
-    askLegalQuestion, 
-    submitFeedback, 
-    getChatSessions, 
-    getChatSessionById, 
-    deleteChatSession,
-    findNearbyHelp,
-    getRelevantLaws,
-    detectEmergency
-} from '../services/api';
-import ReactMarkdown from 'react-markdown';
-import VoiceInput from '../components/VoiceInput';
+import AILegalHelpPage from './AILegalHelpPage';
 
 const SUPPORTED_LANGUAGES = [
     { code: 'English', label: 'English' },

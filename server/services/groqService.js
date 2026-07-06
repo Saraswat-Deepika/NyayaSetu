@@ -154,7 +154,8 @@ You MUST format your output under these exact headings and nothing else:
 ### Suggested Actions (Step-by-step)
 ### Required Documents
 ### Authorities to Contact
-### Disclaimer`;
+### Disclaimer
+(Include a short, standard 1-sentence legal disclaimer)`;
 
         const result = await generateChatCompletion(`Context:\n${context}\n\nUser Query: ${userQuery}`, systemInstruction, false);
         return result;
@@ -188,65 +189,7 @@ ${rawText}`;
 
 const generateDocumentSummary = async (documentText, targetLanguage) => {
     try {
-        const systemPrompt = `You are an expert Indian legal assistant. Analyze the following legal document text and extract structured information, section-wise summaries, simple language explanations, legal risks, and a timeline.
-
-Output valid JSON exactly matching this schema:
-{
-  "structuredData": {
-    "documentType": "string (e.g. FIR, Court Order, Rent Agreement, Contract)",
-    "partiesInvolved": ["string"],
-    "courtName": "string or null",
-    "caseNumber": "string or null",
-    "judgeName": "string or null",
-    "filingDate": "string or null",
-    "relevantSections": ["string (e.g. Section 482 CrPC)"],
-    "petitioner": "string or null",
-    "respondent": "string or null",
-    "legalKeywords": ["string"]
-  },
-  "aiSummary": {
-    "documentOverview": "string",
-    "partiesInvolved": "string",
-    "factsOfCase": "string",
-    "legalIssues": "string",
-    "decisionOutcome": "string",
-    "keyTakeaways": ["string"]
-  },
-  "simpleLanguageSummary": "string (A complete plain English explanation of the entire document that a non-lawyer can understand)",
-  "citizenSummary": {
-    "whatThisDocumentIsAbout": "string (2 to 3 simple sentences in plain language explaining what this document is about)",
-    "whoIsInvolved": "string (list of names and their roles in the document in plain language)",
-    "keyFactsAndDecisions": ["string (key facts and decisions, maximum 6 short bullet points)"],
-    "whatThisMeansForYou": "string (1 to 2 clear sentences explaining direct implications/consequences for the person, written in plain language)",
-    "whatYouShouldDoNext": ["string (numbered action steps in plain language)"],
-    "importantDatesAndDeadlines": ["string (all key deadlines, hearing dates, or dates when actions must be completed from the document)"],
-    "legalTermsExplained": [
-      {
-        "term": "string (difficult legal term or phrase used in the document)",
-        "definition": "string (simple definition of the term in plain language for a citizen)"
-      }
-    ],
-    "risksToBeAwareOf": ["string (2 to 3 plain language warnings about risks or negative consequences in the document)"]
-  },
-  "riskAnalysis": [
-    {
-      "issue": "string (e.g. Missing signatures, High penalty)",
-      "severity": "string (Must be exactly 'Green', 'Yellow', or 'Red')",
-      "description": "string"
-    }
-  ],
-  "timeline": [
-    {
-      "date": "string (e.g. 10 Jan 2025)",
-      "event": "string"
-    }
-  ],
-  "confidenceScores": {
-    "ocrAccuracy": "number (0-100, estimate based on text messiness)",
-    "summaryConfidence": "number (0-100)",
-    "entityExtractionConfidence": "number (0-100)"
-  }
-}`;
+        const systemPrompt = `You are an expert Indian legal assistant. Analyze the following legal document text and extract structured information, section-wise summaries, simple language explanations, legal risks, and a timeline.`;
 
         const prompt = `Document Text:\n${documentText}`;
         const result = await generateChatCompletion(prompt, systemPrompt, true);

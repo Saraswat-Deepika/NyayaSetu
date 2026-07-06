@@ -444,6 +444,20 @@ const VoiceInput = ({ caseId, sessionId, history, language, onUploadSuccess, onU
                     </span>
                 )}
             </div>
+            
+            {isRecording && (
+                <div className="mt-4 p-4 bg-slate-950 rounded-2xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
+                    {/* Live Waveform Visualizer */}
+                    <div className="w-full md:w-2/3 h-[50px] bg-slate-900/60 rounded-xl px-3 py-1.5 flex items-center justify-center border border-slate-800/80">
+                        <canvas 
+                            ref={canvasRef} 
+                            width={320} 
+                            height={40} 
+                            className="w-full h-[40px] rounded-lg"
+                        />
+                    </div>
+                </div>
+            )}
 
             {/* Circular Microphone & Controls Row */}
             <div className={`flex items-center justify-center w-full ${compact ? 'gap-4 my-1.5' : 'gap-8 my-4'}`}>

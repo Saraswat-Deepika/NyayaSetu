@@ -6,3 +6,13 @@ uploads
 .DS_Store
 dist/
 build/
+Judgements/
+python-service/legal_documents/
+server/faiss_store/
+# Large binary/data files
+*.traineddata
+python-service/IndicLegalQA_Dataset_10K_Revised.json
+python-service/faiss_index/*.pkl
+python-service/faiss_index/*.index
+objects.txt
+verify.txt
