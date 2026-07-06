@@ -1,0 +1,16 @@
+{
+  "name": "nyayasetu-root",
+  "version": "1.0.0",
+  "description": "NyayaSetu Root Package Manager",
+  "scripts": {
+    "dev:client": "npm run dev --prefix client",
+    "dev:server": "npm run dev --prefix server",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\""
+  },
+  "dependencies": {
+    "openai": "^6.45.0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

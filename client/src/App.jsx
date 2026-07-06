@@ -14,6 +14,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import VoiceInputPage from './pages/VoiceInputPage';
 import DocumentUploadPage from './pages/DocumentUploadPage';
+import DocumentHistoryPage from './pages/DocumentHistoryPage';
 import AILegalHelpPage from './pages/AILegalHelpPage';
 import SettingsPage from './pages/SettingsPage';
 
@@ -41,9 +42,15 @@ const AppRoutes = () => {
                 <Route index element={<Dashboard />} />
                 <Route path="voice" element={<VoiceInputPage />} />
                 <Route path="documents" element={<DocumentUploadPage />} />
+                <Route path="documents/:id" element={<DocumentUploadPage />} />
+                <Route path="history" element={<DocumentHistoryPage />} />
                 <Route path="legal-help" element={<AILegalHelpPage />} />
                 <Route path="settings" element={<SettingsPage />} />
+                {/* Fallback for unmatched dashboard sub-routes */}
+                <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Route>
+            {/* Global fallback for completely invalid URLs */}
+            <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
     );
 };

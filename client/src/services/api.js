@@ -25,15 +25,27 @@ export const loginUser = async (credentials) => {
     return response.data;
 };
 
-export const askLegalQuestion = async (query, language) => {
+export const askLegalQuestion = async (queryOrData, language) => {
     const token = localStorage.getItem('token');
     const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-    const response = await axios.post(`${baseUrl}/legal/ask`, { query, language }, {
+    
+    let requestData;
+    if (typeof queryOrData === 'object' && queryOrData !== null) {
+        requestData = queryOrData;
+    } else {
+        requestData = { query: queryOrData, language };
+    }
+
+    const response = await axios.post(`${baseUrl}/legal/ask`, requestData, {
         headers: {
             Authorization: `Bearer ${token}`
         }
     });
-    return response.data.response;
+
+    if (typeof queryOrData === 'object' && queryOrData !== null) {
+        return response.data;
+    }
+    return response.data.response || response.data.answer || response.data.guidance || response.data;
 };
 
 export const uploadDocument = async (formData) => {
@@ -42,6 +54,21 @@ export const uploadDocument = async (formData) => {
             'Content-Type': 'multipart/form-data'
         }
     });
+    return response.data;
+};
+
+export const chatWithDocument = async (documentId, query, history) => {
+    const response = await api.post(`/documents/${documentId}/chat`, { query, history });
+    return response.data;
+};
+
+export const translateDocument = async (documentId, language) => {
+    const response = await api.post(`/documents/${documentId}/translate`, { language });
+    return response.data;
+};
+
+export const getDocumentAnalytics = async () => {
+    const response = await api.get('/documents/analytics');
     return response.data;
 };
 
@@ -56,6 +83,92 @@ export const transcribeVoice = async (formData) => {
 
 export const translateText = async (textData) => {
     const response = await api.post('/translate', textData);
+    return response.data;
+};
+
+export const getBanditStats = async () => {
+    const response = await api.get('/bandit/stats');
+    return response.data;
+};
+
+export const getBanditCategoryStats = async (category) => {
+    const response = await api.get(`/bandit/category/${encodeURIComponent(category)}`);
+    return response.data;
+};
+
+export const submitFeedback = async (queryId, feedback) => {
+    const response = await api.post('/feedback', { queryId, feedback });
+    return response.data;
+};
+
+export const getChatSessions = async () => {
+    const response = await api.get('/legal/sessions');
+    return response.data;
+};
+
+export const getChatSessionById = async (sessionId) => {
+    const response = await api.get(`/legal/sessions/${sessionId}`);
+    return response.data;
+};
+
+export const deleteChatSession = async (sessionId) => {
+    const response = await api.delete(`/legal/sessions/${sessionId}`);
+    return response.data;
+};
+
+export const getHistory = async (params) => {
+    const response = await api.get('/history', { params });
+    return response.data;
+};
+
+export const getHistoryById = async (id) => {
+    const response = await api.get(`/history/${id}`);
+    return response.data;
+};
+
+export const deleteHistory = async (id, permanent = false) => {
+    const url = permanent ? `/history/${id}?permanent=true` : `/history/${id}`;
+    const response = await api.delete(url);
+    return response.data;
+};
+
+export const updateHistory = async (id, data) => {
+    const response = await api.put(`/history/${id}`, data);
+    return response.data;
+};
+
+export const restoreHistory = async (id) => {
+    const response = await api.patch(`/history/${id}/restore`);
+    return response.data;
+};
+
+export const emptyTrash = async () => {
+    const response = await api.delete('/history/trash/empty');
+    return response.data;
+};
+
+export const toggleFavorite = async (id) => {
+    const response = await api.patch(`/history/${id}/favorite`);
+    return response.data;
+};
+
+export const recordOpen = async (id) => {
+    const response = await api.patch(`/history/${id}/open`);
+    return response.data;
+};
+
+export const findNearbyHelp = async (locationData) => {
+    const response = await api.post('/legal/nearby-help', locationData);
+    return response.data;
+};
+
+export const getRelevantLaws = async (query, language) => {
+    const response = await api.post('/legal/laws', { query, language });
+    return response.data;
+};
+
+export const detectEmergency = async (query) => {
+    const response = await api.post('/legal/detect-emergency', { query });
     return response.data;
 };
 
