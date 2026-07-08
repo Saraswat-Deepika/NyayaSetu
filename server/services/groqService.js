@@ -1,4 +1,5 @@
 const { OpenAI } = require('openai');
+const { searchRelevantDocs } = require('./ragService');
 
 const groq = new OpenAI({
     apiKey: process.env.GROQ_API_KEY,
@@ -128,31 +129,35 @@ This is a mock legal response for testing purposes.`;
     }
 
     try {
+        const docs = await searchRelevantDocs(userQuery);
+        if (!docs || docs.length === 0) {
+            console.log("ℹ️ getLegalGuidance: No docs found. Returning polite fallback.");
+            return "I couldn't find this specific information in the current legal database.";
+        }
+
+        const context = docs.map((d, i) => `[Document ${i + 1}]:\n${d.pageContent}`).join('\n\n');
+
         const systemInstruction = `You are NyayaSetu, an AI Legal Assistant for India.
 CRITICAL: Every URL, website address, or link you mention MUST be strictly formatted as clickable markdown links, e.g. [Cyber Crime Portal](https://cybercrime.gov.in/) or [Women Helpline Portal](http://www.ncwhelpline.in/). Never write raw, unclickable links like "https://cybercrime.gov.in/" or "cybercrime.gov.in". Make sure the links are 100% correct official portals.
+You must answer the user's legal question strictly based ONLY on the provided document context.
+Do not add any unsupported legal facts, do not guess, and do not fabricate any information.
+
+If the provided context does not contain relevant information to answer the user's specific query, you MUST respond with exactly the following message and nothing else:
+"I couldn't find this specific information in the current legal database."
+
 Provide ONLY the absolute necessary information. Do not include any conversational filler, introductory text, or extra context.
 Use short, simple sentences and clear bullet points or step-by-step lists. It must be extremely easy for a common citizen to understand.
-Respond in the language: ${language || 'English'}. Ensure the entire response (including explanation and layout headings) is returned in this language.
+Respond in the language: ${language || 'English'}. Ensure the entire response (including explanation, headings, and fallback message if triggered) is returned in this language.
 You MUST format your output under these exact headings and nothing else:
 ### Problem Understanding
-(Write 1-2 short bullet points explaining the core issue)
-
 ### Relevant Law
-(List only the direct applicable Acts/Sections in a bulleted list)
-
 ### Suggested Actions (Step-by-step)
-(Provide a clear, detailed, and chronological step-by-step checklist of immediate practical actions the user should take. Crucially, the very first step must be the immediate action required for the specific situation. For example, if the issue is a crime or lost/stolen belongings, the first step must explicitly guide them to visit the nearest police station or use a citizen portal to file a lost report, complaint, or FIR. Adapt the sequence of steps to fit the user's specific problem.)
-
 ### Required Documents
-(List only the required documents in a bulleted list)
-
 ### Authorities to Contact
-(List the specific police station, court, or office to contact in a bulleted list)
-
 ### Disclaimer
 (Include a short, standard 1-sentence legal disclaimer)`;
-        
-        const result = await generateChatCompletion(userQuery, systemInstruction, false);
+
+        const result = await generateChatCompletion(`Context:\n${context}\n\nUser Query: ${userQuery}`, systemInstruction, false);
         return result;
     } catch (error) {
         console.error("Groq AI Error:", error);

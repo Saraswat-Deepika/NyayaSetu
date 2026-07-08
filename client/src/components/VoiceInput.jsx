@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import api from '../services/api';
 
-const VoiceInput = ({ caseId, sessionId, history, language, onUploadSuccess, onUploadStart, onUploadError }) => {
+const VoiceInput = ({ caseId, sessionId, history, language, onUploadSuccess, onUploadStart, onUploadError, compact }) => {
     const [isRecording, setIsRecording] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
@@ -33,6 +33,16 @@ const VoiceInput = ({ caseId, sessionId, history, language, onUploadSuccess, onU
             cleanupRecordingResources();
         };
     }, []);
+
+    // Watch isRecording and start animation frame when canvas renders
+    useEffect(() => {
+        if (isRecording && !isPaused) {
+            const timer = setTimeout(() => {
+                drawWaveform();
+            }, 60);
+            return () => clearTimeout(timer);
+        }
+    }, [isRecording, isPaused]);
 
     const cleanupRecordingResources = () => {
         // Stop timer
@@ -139,8 +149,6 @@ const VoiceInput = ({ caseId, sessionId, history, language, onUploadSuccess, onU
                 setRecordingTime(prev => prev + 1);
             }, 1000);
 
-            // Start Animation Loop for Waveform
-            drawWaveform();
         } catch (error) {
             console.error("Error accessing microphone:", error);
             if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
@@ -245,7 +253,6 @@ const VoiceInput = ({ caseId, sessionId, history, language, onUploadSuccess, onU
                         silenceStartRef.current = Date.now();
                     } else if (Date.now() - silenceStartRef.current > SILENCE_DURATION_MS) {
                         console.log("🤫 Smart Silence Triggered. Auto-submitting...");
-                        // Trigger stopping and submitting recording
                         stopRecording();
                         return;
                     }
@@ -261,26 +268,37 @@ const VoiceInput = ({ caseId, sessionId, history, language, onUploadSuccess, onU
                 ctx.moveTo(0, height / 2);
                 ctx.lineTo(width, height / 2);
                 ctx.strokeStyle = '#cbd5e1'; // Light gray stroke
-                ctx.lineWidth = 2;
+                ctx.lineWidth = 3;
                 ctx.stroke();
             } else {
-                // Drawing active frequency bar waves
-                const barWidth = (width / bufferLength) * 1.5;
+                // Drawing active frequency bar waves (centered Siri style)
+                const barWidth = (width / (bufferLength * 0.6));
                 let x = 0;
 
-                for (let i = 0; i < bufferLength; i++) {
+                for (let i = 0; i < bufferLength * 0.6; i++) {
                     const percent = dataArray[i] / 255;
-                    const barHeight = Math.max(4, percent * (height * 0.75));
+                    // Scale bars higher for visual impact
+                    const barHeight = Math.max(4, percent * (height * 0.85));
 
-                    // Multi-color light gradient (Blue -> Indigo)
+                    // Multi-color modern gradient (Red -> Pink -> Indigo)
                     const gradient = ctx.createLinearGradient(0, height / 2 - barHeight / 2, 0, height / 2 + barHeight / 2);
-                    gradient.addColorStop(0, '#60a5fa'); // Blue-400
-                    gradient.addColorStop(1, '#4f46e5'); // Indigo-600
+                    gradient.addColorStop(0, '#f87171'); // red-400
+                    gradient.addColorStop(0.5, '#ec4899'); // pink-500
+                    gradient.addColorStop(1, '#6366f1'); // indigo-500
 
                     ctx.fillStyle = gradient;
 
-                    // Centered vertical bars
-                    ctx.fillRect(x, height / 2 - barHeight / 2, barWidth - 1.5, barHeight);
+                    // Rounded vertical bars
+                    const barRadius = 3;
+                    const y = height / 2 - barHeight / 2;
+                    ctx.beginPath();
+                    if (ctx.roundRect) {
+                        ctx.roundRect(x, y, barWidth - 2.5, barHeight, barRadius);
+                    } else {
+                        ctx.rect(x, y, barWidth - 2.5, barHeight);
+                    }
+                    ctx.fill();
+
                     x += barWidth;
                 }
             }
@@ -344,77 +362,86 @@ const VoiceInput = ({ caseId, sessionId, history, language, onUploadSuccess, onU
         return `${mins}:${secs}`;
     };
 
+    // Main mic circle click logic
+    const handleMicClick = () => {
+        if (isUploading) return;
+        if (!isRecording) {
+            startRecording();
+        } else if (isPaused) {
+            resumeRecording();
+        } else {
+            stopRecording();
+        }
+    };
+
     return (
-        <div className="bg-slate-50 p-4 sm:p-6 rounded-xl border border-slate-200">
-            <h4 className="text-base sm:text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                <svg className="w-5 h-5 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
-                </svg>
-                Voice Recording
-            </h4>
-            
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-center w-full">
-                {!isRecording ? (
-                    <button 
-                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors shadow-sm shadow-blue-200 active:scale-95 text-sm disabled:opacity-50" 
-                        onClick={startRecording}
-                        disabled={isUploading}
-                    >
-                        <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        <div className={`bg-white rounded-3xl border border-slate-150 shadow-xl shadow-slate-100 flex flex-col items-center w-full max-w-xl mx-auto transition-all duration-350 hover:shadow-2xl ${compact ? 'p-3.5' : 'p-6'}`}>
+            <style dangerouslySetInnerHTML={{ __html: `
+                @keyframes ripple {
+                    0% { transform: scale(0.95); opacity: 0.6; }
+                    50% { transform: scale(1.25); opacity: 0.35; }
+                    100% { transform: scale(1.5); opacity: 0; }
+                }
+                @keyframes activePulse {
+                    0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4), 0 0 0 0 rgba(99, 102, 241, 0.2); }
+                    50% { transform: scale(1.04); box-shadow: 0 0 25px 12px rgba(59, 130, 246, 0.15), 0 0 35px 22px rgba(99, 102, 241, 0.08); }
+                }
+                @keyframes recordingPulse {
+                    0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5), 0 0 0 0 rgba(244, 63, 94, 0.25); }
+                    50% { transform: scale(1.04); box-shadow: 0 0 25px 12px rgba(239, 68, 68, 0.18), 0 0 35px 22px rgba(244, 63, 94, 0.1); }
+                }
+                @keyframes eqBreathing {
+                    0%, 100% { transform: scaleY(0.25); }
+                    50% { transform: scaleY(0.7); }
+                }
+                @keyframes eqActive {
+                    0%, 100% { transform: scaleY(0.4); }
+                    50% { transform: scaleY(1); }
+                }
+                .animate-ripple-1 { animation: ripple 2.2s infinite ease-out; }
+                .animate-ripple-2 { animation: ripple 2.2s infinite ease-out; animation-delay: 1.1s; }
+                .animate-active-pulse { animation: activePulse 2s infinite ease-in-out; }
+                .animate-recording-pulse { animation: recordingPulse 1.6s infinite ease-in-out; }
+                .eq-bar-resting {
+                    animation: eqBreathing 2s infinite ease-in-out;
+                    transform-origin: center;
+                }
+                .eq-bar-uploading {
+                    animation: eqActive 1s infinite ease-in-out;
+                    transform-origin: center;
+                }
+            `}} />
+
+            {/* Top State Badge */}
+            <div className={compact ? 'mb-1.5 scale-90' : 'mb-4'}>
+                {isUploading ? (
+                    <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-50 border border-indigo-150 text-indigo-700 text-xs font-bold uppercase tracking-wider rounded-full shadow-sm animate-pulse">
+                        <svg className="animate-spin h-3.5 w-3.5 text-indigo-600" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                         </svg>
-                        Start Recording
-                    </button>
+                        Thinking & Analyzing...
+                    </span>
+                ) : isRecording ? (
+                    isPaused ? (
+                        <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-50 border border-amber-150 text-amber-700 text-xs font-bold uppercase tracking-wider rounded-full shadow-sm">
+                            <span className="h-2 w-2 rounded-full bg-amber-500" />
+                            Recording Paused
+                        </span>
+                    ) : (
+                        <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-red-50 border border-red-150 text-red-600 text-xs font-bold uppercase tracking-wider rounded-full shadow-sm animate-pulse">
+                            <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+                            </span>
+                            Listening
+                        </span>
+                    )
                 ) : (
-                    <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-                        <button 
-                            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-medium rounded-xl transition-colors shadow-sm shadow-red-200 active:scale-95 text-sm" 
-                            onClick={stopRecording}
-                        >
-                            <span className="w-3 h-3 bg-white rounded-sm shrink-0"></span>
-                            Stop & Submit
-                        </button>
-                        
-                        {isPaused ? (
-                            <button 
-                                type="button"
-                                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl transition-all shadow-sm shadow-indigo-200 active:scale-95 text-sm"
-                                onClick={resumeRecording}
-                                title="Resume Recording"
-                                className="w-12 h-12 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 border border-slate-700 shrink-0"
-                            >
-                                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                                    <path d="M8 5v14l11-7z"></path>
-                                </svg>
-                                Resume
-                            </button>
-                        ) : (
-                            <button 
-                                type="button"
-                                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-xl transition-all shadow-sm shadow-amber-200 active:scale-95 text-sm"
-                                onClick={pauseRecording}
-                                title="Pause Recording"
-                                className="w-12 h-12 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 border border-slate-700 shrink-0"
-                            >
-                                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                                    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path>
-                                </svg>
-                                Pause
-                            </button>
-                        )}
-                        
-                        <button 
-                            type="button"
-                            onClick={cancelRecording}
-                            title="Cancel Recording"
-                            className="w-12 h-12 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 border border-slate-200 shrink-0"
-                        >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                        </button>
-                    </div>
+                    <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-50 border border-blue-150 text-blue-700 text-xs font-bold uppercase tracking-wider rounded-full shadow-sm">
+                        <span className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
+                        Voice Assistant Ready
+                    </span>
                 )}
             </div>
             
@@ -432,41 +459,166 @@ const VoiceInput = ({ caseId, sessionId, history, language, onUploadSuccess, onU
                 </div>
             )}
 
-            {isRecording && (
-                <div className="w-full mt-4">
-                    <canvas 
-                        ref={canvasRef} 
-                        width={600} 
-                        height={80} 
-                        className="w-full h-16 bg-slate-50 rounded-xl border border-slate-200"
-                    />
+            {/* Circular Microphone & Controls Row */}
+            <div className={`flex items-center justify-center w-full ${compact ? 'gap-4 my-1.5' : 'gap-8 my-4'}`}>
+                
+                {/* Left control (Pause/Play) */}
+                {isRecording ? (
+                    isPaused ? (
+                        <button
+                            type="button"
+                            onClick={resumeRecording}
+                            className={`rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200 flex items-center justify-center shadow-md cursor-pointer transition-all active:scale-90 hover:scale-105 ${compact ? 'w-8 h-8' : 'w-12 h-12'}`}
+                            title="Resume Recording"
+                        >
+                            <svg className={`fill-current ${compact ? 'w-3.5 h-3.5' : 'w-5 h-5'}`} viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z" />
+                            </svg>
+                        </button>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={pauseRecording}
+                            className={`rounded-full bg-amber-50 hover:bg-amber-100 text-amber-600 border border-amber-250 flex items-center justify-center shadow-md cursor-pointer transition-all active:scale-90 hover:scale-105 ${compact ? 'w-8 h-8' : 'w-12 h-12'}`}
+                            title="Pause Recording"
+                        >
+                            <svg className={`fill-current ${compact ? 'w-3.5 h-3.5' : 'w-5 h-5'}`} viewBox="0 0 24 24">
+                                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                            </svg>
+                        </button>
+                    )
+                ) : (
+                    <div className={compact ? 'w-8 h-8' : 'w-12 h-12'} />
+                )}
+
+                {/* Center Hero Mic Button */}
+                <div className={`relative flex items-center justify-center shrink-0 ${compact ? 'w-16 h-16' : 'w-28 h-28'}`}>
+                    {/* Ripple effects when active/listening */}
+                    {isRecording && !isPaused && (
+                        <>
+                            <div className="absolute inset-0 rounded-full bg-red-400 opacity-0 animate-ripple-1 pointer-events-none" />
+                            <div className="absolute inset-0 rounded-full bg-red-400 opacity-0 animate-ripple-2 pointer-events-none" />
+                        </>
+                    )}
+                    {(!isRecording && !isUploading) && (
+                        <div className="absolute inset-0 rounded-full bg-blue-400 opacity-10 animate-ripple-1 pointer-events-none" />
+                    )}
+
+                    {/* Microphone Circle */}
+                    <button
+                        onClick={handleMicClick}
+                        disabled={isUploading}
+                        className={`z-10 rounded-full flex items-center justify-center text-white transition-all duration-300 shadow-xl border cursor-pointer voice-input-mic-btn ${compact ? 'w-14 h-14' : 'w-24 h-24'} ${
+                            isUploading
+                                ? 'bg-gradient-to-tr from-indigo-500 to-purple-600 border-indigo-400 shadow-indigo-200/50 scale-95 opacity-90'
+                                : isRecording
+                                    ? isPaused
+                                        ? 'bg-slate-500 border-slate-400 shadow-slate-200/50 hover:bg-slate-600'
+                                        : 'bg-gradient-to-tr from-red-500 to-rose-600 border-red-400 shadow-red-250/50 animate-recording-pulse hover:scale-[1.03]'
+                                    : 'bg-gradient-to-tr from-blue-600 to-indigo-600 border-blue-500 shadow-indigo-200/50 animate-active-pulse hover:scale-[1.03]'
+                        }`}
+                    >
+                        {isUploading ? (
+                            <svg className={`animate-spin text-white ${compact ? 'w-6 h-6' : 'w-9 h-9'}`} fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                            </svg>
+                        ) : (
+                            <svg className={`fill-none ${compact ? 'w-6 h-6' : 'w-10 h-10'}`} stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
+                            </svg>
+                        )}
+                    </button>
                 </div>
-            )}
-            
+
+                {/* Right control (Cancel Recording) */}
+                {isRecording ? (
+                    <button
+                        type="button"
+                        onClick={cancelRecording}
+                        className={`rounded-full bg-red-50 hover:bg-red-100 text-red-650 border border-red-150 flex items-center justify-center shadow-md cursor-pointer transition-all active:scale-90 hover:scale-105 ${compact ? 'w-8 h-8' : 'w-12 h-12'}`}
+                        title="Cancel & Discard Recording"
+                    >
+                        <svg className={`fill-none ${compact ? 'w-3.5 h-3.5' : 'w-5 h-5'}`} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </button>
+                ) : (
+                    <div className={compact ? 'w-8 h-8' : 'w-12 h-12'} />
+                )}
+            </div>
+
+            {/* Instruction / Status Subtitle */}
+            <div className={`text-center px-4 max-w-sm ${compact ? 'mt-0.5' : 'mt-2'}`}>
+                <p className={`text-slate-700 font-semibold select-none leading-snug ${compact ? 'text-xs' : 'text-sm'}`}>
+                    {isUploading ? (
+                        "Translating & retrieving Indian laws..."
+                    ) : isRecording ? (
+                        isPaused ? (
+                            "Recording paused. Tap microphone to resume."
+                        ) : (
+                            "Listening... Tap microphone again to submit."
+                        )
+                    ) : (
+                        "Tap microphone to ask a legal query"
+                    )}
+                </p>
+                <p className={`text-slate-450 mt-0.5 tracking-wide select-none ${compact ? 'text-[9.5px]' : 'text-[11px]'}`}>
+                    {!isRecording && !isUploading && "Speak in Hindi, English, Bengali, Tamil, etc."}
+                    {isRecording && !isPaused && "Or click the left button to pause, right to discard."}
+                    {isRecording && isPaused && "Or click Stop & Submit to submit what was recorded."}
+                </p>
+            </div>
+
+            {/* Timer Display */}
             {isRecording && (
-                <div className="flex items-center justify-between mt-4">
-                    <div className="flex items-center gap-2 text-red-500 font-medium text-sm">
-                        <span className="relative flex h-3 w-3 shrink-0">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                        </span>
-                        {isPaused ? 'Recording paused' : 'Recording in progress...'}
-                    </div>
-                    <div className="text-slate-600 font-mono text-sm font-semibold">
-                        {formatTime(recordingTime)}
-                    </div>
+                <div className={`bg-slate-50 border border-slate-200 rounded-full font-mono font-bold text-slate-600 shadow-inner flex items-center gap-1 select-none animate-in zoom-in-95 duration-200 ${compact ? 'mt-1 text-[10px] px-2 py-0.5' : 'mt-3.5 text-xs px-3 py-1'}`}>
+                    <span className={`h-1.5 w-1.5 rounded-full ${isPaused ? 'bg-amber-400' : 'bg-red-500 animate-ping'}`} />
+                    <span>{formatTime(recordingTime)}</span>
                 </div>
             )}
 
-            {isUploading && (
-                <div className="flex items-center gap-3 mt-4 text-blue-600 font-medium text-sm">
-                    <svg className="animate-spin w-5 h-5 text-blue-600 shrink-0" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Uploading & transcribing audio...
-                </div>
-            )}
+            {/* Waveform / Visualizer Equalizer Area */}
+            <div className={`w-full flex items-center justify-center ${compact ? 'mt-2.5 min-h-[24px]' : 'mt-5 min-h-[48px]'}`}>
+                {isRecording ? (
+                    <div className={`w-full shadow-inner bg-slate-50/50 rounded-2xl border border-slate-100 animate-in fade-in duration-300 ${compact ? 'p-1' : 'p-2'}`}>
+                        <canvas
+                            ref={canvasRef}
+                            width={500}
+                            height={compact ? 30 : 60}
+                            className={`w-full ${compact ? 'h-6' : 'h-12'} bg-transparent rounded-lg`}
+                        />
+                    </div>
+                ) : (
+                    /* Elegant CSS animated breathing waves for idle or uploading */
+                    <div className={`flex items-end justify-center gap-1 w-full max-w-xs mx-auto text-slate-300/60 select-none ${compact ? 'h-5 scale-75 origin-center' : 'h-10'}`}>
+                        {[
+                            { h: 'h-3', d: '0.1s' },
+                            { h: 'h-6', d: '0.3s' },
+                            { h: 'h-4', d: '0.5s' },
+                            { h: 'h-8', d: '0.2s' },
+                            { h: 'h-10', d: '0.4s' },
+                            { h: 'h-5', d: '0.6s' },
+                            { h: 'h-9', d: '0.1s' },
+                            { h: 'h-6', d: '0.3s' },
+                            { h: 'h-8', d: '0.5s' },
+                            { h: 'h-4', d: '0.2s' },
+                            { h: 'h-7', d: '0.4s' },
+                            { h: 'h-3', d: '0.1s' }
+                        ].map((bar, idx) => (
+                            <div
+                                key={idx}
+                                style={{ animationDelay: bar.d }}
+                                className={`rounded-full transition-colors duration-300 ${bar.h} ${compact ? 'w-1' : 'w-1.5'} ${
+                                    isUploading 
+                                        ? 'bg-indigo-400 eq-bar-uploading shadow-sm shadow-indigo-100' 
+                                        : 'bg-slate-300/80 eq-bar-resting'
+                                }`}
+                            />
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     );
 };
