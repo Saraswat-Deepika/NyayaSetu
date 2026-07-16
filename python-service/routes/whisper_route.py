@@ -1,7 +1,5 @@
 from flask import Blueprint, request, jsonify
-import whisper
 import os
-import torch
 
 whisper_route = Blueprint('whisper_route', __name__)
 
@@ -11,6 +9,8 @@ model = None
 def init_whisper():
     global model
     if model is None:
+        import whisper
+        import torch
         print("[Whisper] Loading tiny model...")
         # Limit torch threads to reduce memory overhead on small instances
         torch.set_num_threads(1)

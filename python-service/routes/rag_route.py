@@ -1,8 +1,6 @@
 from flask import Blueprint, request, jsonify
-import faiss
 import pickle
 import numpy as np
-from sentence_transformers import SentenceTransformer
 import os
 
 rag_route = Blueprint('rag_route', __name__)
@@ -16,6 +14,9 @@ def init_rag():
     global model, index, chunks
     if model is None:
         try:
+            import faiss
+            from sentence_transformers import SentenceTransformer
+            
             print("[RAG Route] Loading embedding model...")
             model = SentenceTransformer('all-MiniLM-L6-v2')
             
