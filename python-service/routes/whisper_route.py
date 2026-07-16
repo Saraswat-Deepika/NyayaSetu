@@ -3,8 +3,8 @@ import whisper
 import os
 
 whisper_route = Blueprint('whisper_route', __name__)
-# Load small model as requested
-model = whisper.load_model("small")
+# Load tiny model to prevent Out of Memory errors on Render Free Tier
+model = whisper.load_model("tiny")
 
 @whisper_route.route('/transcribe', methods=['POST'])
 def transcribe():
