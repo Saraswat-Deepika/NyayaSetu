@@ -20,13 +20,22 @@ const MODELS_TO_TRY = [
 const generateContentWithFallback = async (prompt, systemInstruction = undefined) => {
     let lastError = null;
     const { OpenAI } = require('openai');
-    const apiKey = process.env.GROQ_API_KEY;
-    const client = new OpenAI({
-        apiKey,
-        baseURL: 'https://api.groq.com/openai/v1'
-    });
+    const geminiKey = process.env.GEMINI_API_KEY;
+    let client;
+    let modelsToTry = [...MODELS_TO_TRY];
 
-    for (const modelName of MODELS_TO_TRY) {
+    if (geminiKey && geminiKey !== 'dummy_key') {
+        client = null; // We will use Axios directly for Gemini models
+        modelsToTry = ['gemini-1.5-flash', 'gemini-1.5-flash-8b', 'gemini-1.0-pro', 'gemini-pro'];
+    } else {
+        const apiKey = process.env.GROQ_API_KEY;
+        client = new OpenAI({
+            apiKey,
+            baseURL: 'https://api.groq.com/openai/v1'
+        });
+    }
+
+    for (const modelName of modelsToTry) {
         try {
             console.log(`🤖 Attempting content generation with model: ${modelName}`);
             const messages = [];
@@ -35,22 +44,58 @@ const generateContentWithFallback = async (prompt, systemInstruction = undefined
             }
             messages.push({ role: 'user', content: prompt });
 
-            const response = await client.chat.completions.create({
-                model: modelName,
-                messages,
-                temperature: 0.1
-            });
-            const text = response.choices[0].message.content;
-            if (text) {
-                console.log(`✅ Generation Succeeded using ${modelName}`);
-                return text;
+            if (modelName.startsWith('gemini')) {
+                const axios = require('axios');
+                const parts = systemInstruction ? [{ text: systemInstruction }, { text: prompt }] : [{ text: prompt }];
+                const payload = { contents: [{ parts }] };
+                
+                const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiKey}`, payload, {
+                    headers: { 'Content-Type': 'application/json' },
+                    timeout: 60000
+                });
+                
+                const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (text) {
+                    console.log(`✅ Generation Succeeded using ${modelName}`);
+                    return text;
+                }
+            } else {
+                if (!client) {
+                    throw new Error("No OpenAI client available for non-Gemini models.");
+                }
+                const response = await client.chat.completions.create({
+                    model: modelName,
+                    messages,
+                    temperature: 0.1
+                });
+                const text = response.choices[0].message.content;
+                if (text) {
+                    console.log(`✅ Generation Succeeded using ${modelName}`);
+                    return text;
+                }
             }
         } catch (err) {
             console.warn(`⚠️ Generation failed with ${modelName}:`, err.message);
             lastError = err;
         }
     }
-    throw lastError || new Error("All generative models failed");
+    
+    // FINAL FREE FALLBACK IF ALL KEYS FAIL
+    console.log("ℹ️ All primary models failed. Using Free Pollinations AI Fallback...");
+    try {
+        const axios = require('axios');
+        const pollResponse = await axios.post('https://text.pollinations.ai/', {
+            messages: systemInstruction ? [{ role: 'system', content: systemInstruction }, { role: 'user', content: prompt }] : [{ role: 'user', content: prompt }]
+        }, { headers: { 'Content-Type': 'application/json' }, timeout: 60000 });
+        if (pollResponse.data) {
+            console.log("✅ Generation Succeeded using Pollinations AI");
+            return typeof pollResponse.data === 'string' ? pollResponse.data : JSON.stringify(pollResponse.data);
+        }
+    } catch (pollErr) {
+        console.error("Pollinations fallback also failed:", pollErr.message);
+    }
+
+    throw lastError || new Error("All fallback generation attempts failed.");
 };
 
 // High quality predefined legal templates
@@ -326,11 +371,8 @@ This is a mock RAG response for testing.`;
 
     const systemPrompt = `You are NyayaSetu, an AI Legal Assistant for India.
 CRITICAL: Every URL, website address, or link you mention MUST be strictly formatted as clickable markdown links, e.g. [Cyber Crime Portal](https://cybercrime.gov.in/) or [Women Helpline Portal](http://www.ncwhelpline.in/). Never write raw, unclickable links like "https://cybercrime.gov.in/" or "cybercrime.gov.in". Make sure the links are 100% correct official portals.
-You must answer the user's legal question strictly based ONLY on the provided document context.
+You must answer the user's legal question accurately. If the provided document context contains relevant information, use it. If the provided context does not contain relevant information, use your comprehensive knowledge of Indian Law to provide an accurate, helpful answer.
 Do not add any unsupported legal facts, do not guess, and do not fabricate any information.
-
-If the provided context does not contain relevant information to answer the user's specific query, you MUST respond with exactly the following message and nothing else:
-"I couldn't find this specific information in the current legal database."
 
 Format your output under these exact headings and nothing else:
 ### Problem Understanding
@@ -389,15 +431,14 @@ This is a mock response comparing past similar cases.`;
 
     const systemPrompt = `You are NyayaSetu, an AI Legal Assistant for India.
 CRITICAL: Every URL, website address, or link you mention MUST be strictly formatted as clickable markdown links, e.g. [Cyber Crime Portal](https://cybercrime.gov.in/) or [Women Helpline Portal](http://www.ncwhelpline.in/). Never write raw, unclickable links like "https://cybercrime.gov.in/" or "cybercrime.gov.in". Make sure the links are 100% correct official portals.
-You must answer the user's legal question strictly based ONLY on the provided document context, by comparing/referencing these past resolved cases:
+You must answer the user's legal question accurately, by comparing/referencing these past resolved cases if they are relevant:
 ${caseContext}
 
 Document Context:
 ${context}
 
 Do not add any unsupported legal facts, do not guess, and do not fabricate any information.
-If the provided context/cases do not contain relevant information to answer the user's specific query, you MUST respond with exactly the following message and nothing else:
-"I couldn't find this specific information in the current legal database."
+If the provided context/cases do not contain relevant information, use your comprehensive knowledge of Indian Law to provide an accurate, helpful answer. Do not hallucinate fake laws.
 
 Format your output under these exact headings and nothing else:
 ### Problem Understanding
@@ -471,8 +512,7 @@ Document Context:
 ${context}
 
 Do not add any unsupported legal facts, do not guess, and do not fabricate any information.
-If the provided context does not contain relevant information to answer the user's specific query, you MUST respond with exactly the following message and nothing else:
-"I couldn't find this specific information in the current legal database."
+If the provided context does not contain relevant information, use your comprehensive knowledge of Indian Law to provide an accurate, helpful answer. Do not hallucinate fake laws.
 
 Instructions:
 1. Answer the user's specific legal question contextually.
@@ -501,11 +541,10 @@ const generateAnswerByStrategy = async (strategy, query, category, history, lang
     // Step 1: Check whether the user's query can be answered using the legal database/RAG context
     const docs = await searchRelevantDocs(query);
     if (!docs || docs.length === 0) {
-        console.log("ℹ️ No documents retrieved in banditService. Returning database unavailable message.");
-        return "I couldn't find this specific information in the current legal database.";
+        console.log("ℹ️ No documents retrieved in banditService. Proceeding with empty context using LLM general knowledge.");
     }
 
-    const context = docs.map((d, i) => `[Document ${i + 1}]:\n${d.pageContent}`).join('\n\n');
+    const context = docs && docs.length > 0 ? docs.map((d, i) => `[Document ${i + 1}]:\n${d.pageContent}`).join('\n\n') : "No external documents retrieved. Use your internal knowledge of Indian Law.";
     let answerText = null;
 
     try {
@@ -542,28 +581,65 @@ You are facing a legal query of category ${category}.
 This is a fallback mock response for testing.`;
             }
             // Standard system instruction from legalController, modified to use context strictly
-            const systemInstruction = `You are NyayaSetu, an AI Legal Assistant for India.
-CRITICAL: Every URL, website address, or link you mention MUST be strictly formatted as clickable markdown links, e.g. [Cyber Crime Portal](https://cybercrime.gov.in/) or [Women Helpline Portal](http://www.ncwhelpline.in/). Never write raw, unclickable links like "https://cybercrime.gov.in/" or "cybercrime.gov.in". Make sure the links are 100% correct official portals.
-You must answer the user's legal question strictly based ONLY on the provided document context.
-Do not add any unsupported legal facts, do not guess, and do not fabricate any information.
+            const systemInstruction = `Your task is to answer legal queries in a structured, practical, and easy-to-understand format.
 
-If the provided context does not contain relevant information to answer the user's specific query, you MUST respond with exactly the following message and nothing else:
-"I couldn't find this specific information in the current legal database."
+STRICT INSTRUCTIONS:
+1. Answer ONLY the user's current query.
+2. Use ONLY the retrieved legal context and database information.
+3. Never answer a different question than the one asked by the user.
+4. Convert legal language into simple language understandable by a non-lawyer.
+5. Focus on "What should the user do next?" rather than legal theory.
+6. Avoid unnecessary legal jargon, lengthy explanations, and excessive citations.
+7. Mention only laws that are directly relevant to the user's question.
+8. If no relevant information exists in the database, return: "No relevant legal information was found in the NyayaSetu legal database."
+9. Respond in the language: ${language || 'English'}. Ensure the entire response (including explanation, headings, and fallback message if triggered) is returned in this language.
+10. Every URL, website address, or link you mention MUST be strictly formatted as clickable markdown links, e.g. [Cyber Crime Portal](https://cybercrime.gov.in/). Never write raw, unclickable links.
 
-Provide ONLY the absolute necessary information. Do not include any conversational filler, introductory text, or extra context.
-Use short, simple sentences and clear bullet points or step-by-step lists. It must be extremely easy for a common citizen to understand.
-Respond in the language: ${language || 'English'}. Ensure the entire response (including explanation, headings, and fallback message if triggered) is returned in this language.
-You MUST format your output under these exact headings and nothing else:
-### Problem Understanding
-### Relevant Law
-### Suggested Actions (Step-by-step)
-### Required Documents
-### Authorities to Contact
-### Disclaimer`;
+Use EXACTLY the following output format:
 
-            const promptConstraint = `\n\n[INSTRUCTION: Answer clearly and concisely using ONLY the provided document context. Under the 'Suggested Actions (Step-by-step)' heading, provide a complete, logical step-by-step list of actions. Keep the entire response under 300 words total. Do not include any introductory text, warnings, or conversational filler. Start directly with the headings. It must be very easy for a common citizen to understand.]`;
+### 🔍 Your Question
+- Explain the user's issue in 1-2 simple sentences.
 
-            answerText = await generateContentWithFallback(`Context:\n${context}\n\nUser Query: ${query}${promptConstraint}`, systemInstruction);
+### 📄 Relevant Law
+- Mention only relevant Acts, Sections, or Rules.
+- For each law provide:
+  - Law Name
+  - Section Number
+  - One-line explanation in simple language.
+
+### 📌 What You Should Do
+Provide practical and actionable steps. For each step use this structure:
+1. **Action Title**
+   - What the user should do.
+   - Why this step is important.
+   - Any useful tips or precautions.
+
+Limit to 5-7 steps unless absolutely necessary.
+
+### 📑 Required Documents
+Create a table:
+| Document | Why it is Needed |
+|----------|------------------|
+| Example Document | Purpose |
+
+### 🏢 Authorities to Contact
+Provide only relevant authorities. For each authority mention:
+- Authority Name
+- When to contact them
+- Purpose
+
+### ⚖️ Your Legal Rights
+Mention 2-5 important rights the user should know.
+
+### 🚨 When to Seek Immediate Help
+- List emergency situations related to this query.
+
+### 📍 Next Step
+- Final concluding action to take right now.`;
+
+            const promptConstraint = "";
+
+            answerText = await generateContentWithFallback(`LEGAL CONTEXT:\n${context}\n\nUSER QUERY:\n${query}${promptConstraint}`, systemInstruction);
         }
 
         return answerText;

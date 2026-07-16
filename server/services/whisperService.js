@@ -3,7 +3,7 @@ const FormData = require('form-data');
 const fs = require('fs');
 const path = require('path');
 
-const transcribeAudio = async (filePath, language) => {
+const transcribeAudio = async (filePath, language, mimeType = 'audio/webm') => {
   if (process.env.MOCK_AI === 'true') {
     console.log('🧪 [MOCK MODE] Transcribing audio with mock data. Selected language:', language);
     const mockTranscripts = {
@@ -25,8 +25,28 @@ const transcribeAudio = async (filePath, language) => {
     return mockTranscripts[langKey] || mockTranscripts['english'];
   }
 
+  const pythonServiceUrl = process.env.PYTHON_SERVICE_URL || 'http://127.0.0.1:8000';
+  
+  try {
+      console.log('📡 Transcribing audio using local Python Whisper API:', filePath);
+      const formData = new FormData();
+      formData.append('audio', fs.createReadStream(filePath));
+      
+      const response = await axios.post(`${pythonServiceUrl}/transcribe`, formData, {
+          headers: formData.getHeaders(),
+          timeout: 120000 // 2 min timeout for local whisper
+      });
+      
+      if (response.data && response.data.transcript) {
+          console.log('✅ Local Python Whisper Transcript Received:', response.data.transcript);
+          return response.data.transcript.trim();
+      }
+  } catch (err) {
+      console.warn('⚠️ Local Python Whisper failed or not running. Falling back to Gemini/OpenAI...', err.message);
+  }
+
   const openAIKey = process.env.OPENAI_API_KEY;
-  const isOpenAIConfigured = openAIKey && openAIKey !== 'your_openai_api_key_here' && openAIKey.trim() !== '';
+  const isOpenAIConfigured = openAIKey && openAIKey !== 'your_openai_api_key_here' && openAIKey.trim() !== 'dummy_key' && openAIKey.trim() !== '';
 
   if (isOpenAIConfigured) {
     try {
@@ -73,7 +93,68 @@ const transcribeAudio = async (filePath, language) => {
     }
   }
 
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (geminiKey && geminiKey !== 'dummy_key') {
+      try {
+          console.log('📡 Transcribing audio using Gemini API:', filePath, 'Language hint:', language);
+          
+          const stats = fs.statSync(filePath);
+          if (stats.size < 100) {
+              console.warn('⚠️ Audio file is too small or empty. Returning early.');
+              return "No speech detected.";
+          }
+
+          // Sanitize mimeType for Gemini API (e.g. remove ;codecs=opus)
+          let cleanMimeType = mimeType ? mimeType.split(';')[0] : 'audio/webm';
+          const validGeminiMimes = ['audio/aac', 'audio/flac', 'audio/mp3', 'audio/m4a', 'audio/mp4', 'audio/ogg', 'audio/wav', 'audio/webm'];
+          if (!validGeminiMimes.includes(cleanMimeType)) {
+              cleanMimeType = 'audio/mp3'; // safe fallback
+          }
+
+          const base64Audio = fs.readFileSync(filePath).toString('base64');
+          const payload = {
+              contents: [{
+                  parts: [
+                      {
+                          inlineData: {
+                              mimeType: cleanMimeType,
+                              data: base64Audio
+                          }
+                      },
+                      { text: "Please transcribe this audio accurately" + (language ? ` in ${language}` : "") + ". Output only the transcription, nothing else." }
+                  ]
+              }]
+          };
+          console.log(`[whisperService] Gemini Request Payload: mimeType=${cleanMimeType}, data length=${base64Audio.length}`);
+          const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, payload, {
+              headers: { 'Content-Type': 'application/json' },
+              timeout: 60000
+          });
+          const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) {
+              console.log('✅ Gemini Transcript Received:', text);
+              return text;
+          } else {
+              console.warn('⚠️ Gemini Response did not contain text:', JSON.stringify(response.data));
+              return "No speech detected.";
+          }
+      } catch (err) {
+          const errMsg = err.response?.data?.error?.message || err.message;
+          console.error('❌ Gemini Transcription Error:', errMsg);
+          
+          throw new Error(`Gemini transcription failed: ${errMsg}`);
+      }
+  }
+
   // Fallback/Primary Groq Whisper AI transcription
+  const groqKey = process.env.GROQ_API_KEY;
+  if (!groqKey || groqKey === 'dummy_key') {
+      console.warn('⚠️ GROQ_API_KEY is not configured or is a dummy key. Fast-failing transcription.');
+      const error = new Error("No valid transcription API key found (OpenAI/Gemini/Groq).");
+      error.location = 'whisperService.js line 130 (Final fallback)';
+      throw error;
+  }
+
   try {
     console.log('📡 Transcribing audio using Groq Whisper API:', filePath, 'Language hint:', language);
     const formData = new FormData();

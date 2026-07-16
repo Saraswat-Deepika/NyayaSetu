@@ -20,6 +20,15 @@ const DashboardLayout = () => {
         { path: '/dashboard/documents', label: 'Document Upload', icon: '📄' },
         { path: '/dashboard/history', label: 'Document History', icon: '📜' },
         { path: '/dashboard/legal-help', label: 'AI Legal Help', icon: '⚖️' },
+        { path: '/dashboard/connect-lawyer', label: 'Connect to Lawyer', icon: '👨‍⚖️' },
+        { path: '/dashboard/appointments', label: 'Appointments', icon: '📅' },
+        { path: '/dashboard/time-slots', label: 'Time Slots', icon: '⏰' },
+        ...(!user || (user?.role !== 'lawyer' && user?.role !== 'admin') 
+            ? [{ path: '/register-lawyer', label: 'Lawyer Registration', icon: '👨‍⚖️' }] 
+            : []),
+        ...(user?.role === 'admin' 
+            ? [{ path: '/dashboard/admin/lawyers', label: 'Lawyer Approvals', icon: '✅' }]
+            : []),
         { path: '/dashboard/settings', label: 'Settings', icon: '⚙️' },
     ];
 

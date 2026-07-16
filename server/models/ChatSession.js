@@ -11,6 +11,8 @@ const chatSessionSchema = new mongoose.Schema({
         feedback: { type: String, enum: ['none', 'helpful', 'not-helpful'], default: 'none' },
         laws: { type: mongoose.Schema.Types.Mixed },
         emergency: { type: mongoose.Schema.Types.Mixed },
+        severity: { type: String, enum: ['High Priority', 'Medium Priority', 'General Guidance'], default: 'General Guidance' },
+        suggestedActions: [{ type: String }],
         createdAt: { type: Date, default: Date.now }
     }]
 }, { timestamps: true });

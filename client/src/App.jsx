@@ -9,6 +9,7 @@ import DashboardLayout from './layouts/DashboardLayout';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import RegisterLawyer from './pages/RegisterLawyer';
 
 // Protected Pages
 import Dashboard from './pages/Dashboard';
@@ -17,6 +18,12 @@ import DocumentUploadPage from './pages/DocumentUploadPage';
 import DocumentHistoryPage from './pages/DocumentHistoryPage';
 import AILegalHelpPage from './pages/AILegalHelpPage';
 import SettingsPage from './pages/SettingsPage';
+import ConnectLawyer from './pages/ConnectLawyer';
+import LawyerProfile from './pages/LawyerProfile';
+import Appointments from './pages/Appointments';
+import ChatWindow from './pages/ChatWindow';
+import ManageTimeSlots from './pages/ManageTimeSlots';
+import AdminLawyerApprovals from './pages/AdminLawyerApprovals';
 
 const ProtectedRoute = ({ children }) => {
     const { token } = useContext(AppContext);
@@ -32,6 +39,7 @@ const AppRoutes = () => {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/register-lawyer" element={<RegisterLawyer />} />
             
             {/* Dashboard Routes with Layout */}
             <Route path="/dashboard" element={
@@ -45,7 +53,13 @@ const AppRoutes = () => {
                 <Route path="documents/:id" element={<DocumentUploadPage />} />
                 <Route path="history" element={<DocumentHistoryPage />} />
                 <Route path="legal-help" element={<AILegalHelpPage />} />
+                <Route path="connect-lawyer" element={<ConnectLawyer />} />
+                <Route path="lawyer/:id" element={<LawyerProfile />} />
+                <Route path="appointments" element={<Appointments />} />
+                <Route path="time-slots" element={<ManageTimeSlots />} />
+                <Route path="chat/:id" element={<ChatWindow />} />
                 <Route path="settings" element={<SettingsPage />} />
+                <Route path="admin/lawyers" element={<AdminLawyerApprovals />} />
                 {/* Fallback for unmatched dashboard sub-routes */}
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Route>

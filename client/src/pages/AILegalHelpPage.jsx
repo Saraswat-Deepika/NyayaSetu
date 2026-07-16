@@ -7,9 +7,11 @@ import {
     deleteChatSession,
     findNearbyHelp,
     getRelevantLaws,
-    detectEmergency
+    detectEmergency,
+    uploadDocument
 } from '../services/api';
 import ReactMarkdown from 'react-markdown';
+import { useNavigate } from 'react-router-dom';
 import VoiceInput from '../components/VoiceInput';
 
 const SUPPORTED_LANGUAGES = [
@@ -45,6 +47,7 @@ const AILegalHelpPage = () => {
     // Layout & UX States
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const navigate = useNavigate();
     const [copiedMessageIndex, setCopiedMessageIndex] = useState(null);
     const [selectedLanguage, setSelectedLanguage] = useState('English');
     const [isVoicePanelOpen, setIsVoicePanelOpen] = useState(false);
@@ -73,6 +76,7 @@ const AILegalHelpPage = () => {
 
     const messagesEndRef = useRef(null);
     const textareaRef = useRef(null);
+    const fileInputRef = useRef(null);
 
     // Handle screen resize to close sidebar on mobile by default
     useEffect(() => {
@@ -214,16 +218,23 @@ const AILegalHelpPage = () => {
                 sessionId: currentSessionId,
                 language: selectedLanguage
             });
-            
-            const answer = data.answer || data.guidance || data.response;
+            const responseObj = data.response || data.guidance || data.answer;
+            const replyText = typeof responseObj === 'object' && responseObj !== null ? responseObj.reply : responseObj;
+            const severity = typeof responseObj === 'object' && responseObj !== null ? responseObj.severity : "General Guidance";
+            const category = typeof responseObj === 'object' && responseObj !== null ? responseObj.category : "Other";
+            const suggestedActions = typeof responseObj === 'object' && responseObj !== null ? (responseObj.suggestedActions || []) : [];
+
             setMessages(prev => [...prev, { 
                 role: 'ai', 
-                content: answer || "I couldn't process that request.",
+                content: replyText || "I couldn't process that request.",
                 queryId: data.case?._id,
                 strategy: data.selectedStrategy,
                 feedback: 'none',
                 laws: data.laws || [],
-                emergency: data.emergency
+                emergency: data.emergency,
+                severity: severity,
+                category: category,
+                suggestedActions: suggestedActions
             }]);
 
             if (!currentSessionId && data.sessionId) {
@@ -254,7 +265,65 @@ const AILegalHelpPage = () => {
     };
 
     const handleEmergencyNearbySearch = () => {
-        handleFindNearbyClick();
+        handleFindNearbyClick(); // Using the existing handleFindNearbyClick logic
+    };
+
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Immediately show a system message
+        setMessages(prev => [...prev, { role: 'user', content: `[📎 Uploaded File: ${file.name}]` }]);
+        setIsLoading(true);
+
+        const formData = new FormData();
+        formData.append('document', file);
+        formData.append('targetLanguage', selectedLanguage);
+
+        try {
+            const data = await uploadDocument(formData);
+            const summaryString = typeof data.aiSummary === 'object' ? JSON.stringify(data.aiSummary) : data.aiSummary;
+            
+            // Auto-send a query regarding the document
+            const documentQuery = `I have uploaded a legal document named ${file.name}. Here is its summary:\n\n${summaryString}\n\nPlease analyze this document and tell me what I should do next based on it.`;
+            
+            const responseData = await askLegalQuestion({ 
+                question: documentQuery,
+                history: messages.slice(1),
+                sessionId: currentSessionId,
+                language: selectedLanguage
+            });
+            
+            const responseObj = responseData.response || responseData.guidance || responseData.answer;
+            const replyText = typeof responseObj === 'object' && responseObj !== null ? responseObj.reply : responseObj;
+            
+            setMessages(prev => [...prev, { 
+                role: 'ai', 
+                content: replyText || "I've analyzed your document. Please let me know if you have specific questions about it.",
+                queryId: responseData.case?._id,
+                strategy: responseData.selectedStrategy,
+                feedback: 'none',
+                laws: responseData.laws || [],
+                emergency: responseData.emergency,
+                severity: typeof responseObj === 'object' && responseObj !== null ? responseObj.severity : "General Guidance",
+                category: typeof responseObj === 'object' && responseObj !== null ? responseObj.category : "Document Analysis",
+                suggestedActions: typeof responseObj === 'object' && responseObj !== null ? (responseObj.suggestedActions || []) : []
+            }]);
+
+            if (!currentSessionId && responseData.sessionId) {
+                setCurrentSessionId(responseData.sessionId);
+            }
+            
+            const sessionsData = await getChatSessions();
+            setSessions(sessionsData.sessions || []);
+            
+        } catch (error) {
+            console.error("Document upload failed:", error);
+            setMessages(prev => [...prev, { role: 'ai', content: "Failed to upload or analyze the document. Please try again." }]);
+        } finally {
+            setIsLoading(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
     };
 
     // Geolocation / Manual Finder Handlers
@@ -358,7 +427,7 @@ const AILegalHelpPage = () => {
                 }
             `}</style>
 
-            <div className="flex h-full w-full overflow-hidden bg-slate-50 text-slate-800 transition-colors duration-300 relative">
+            <div className="flex h-full w-full overflow-hidden bg-white text-slate-800 transition-colors duration-300 relative">
                 
                 {/* Backdrop overlay for mobile drawer */}
                 {isSidebarOpen && (
@@ -368,54 +437,54 @@ const AILegalHelpPage = () => {
                     />
                 )}
 
-                {/* Left Collapsible Sidebar */}
+                {/* Left Collapsible Sidebar (ChatGPT Dark Style) */}
                 <aside 
-                    className={`fixed lg:relative inset-y-0 left-0 z-40 lg:z-10 flex flex-col h-full bg-white border-r border-slate-200 transition-all duration-300 shrink-0 overflow-hidden ${
+                    className={`fixed lg:relative inset-y-0 left-0 z-40 lg:z-10 flex flex-col h-full bg-[#202123] text-white border-r border-[#4d4d4f] transition-all duration-300 shrink-0 overflow-hidden ${
                         isSidebarOpen 
-                            ? 'w-72 translate-x-0 opacity-100' 
+                            ? 'w-64 translate-x-0 opacity-100' 
                             : 'w-0 -translate-x-full opacity-0 pointer-events-none lg:w-0 lg:translate-x-0 lg:opacity-0'
                     }`}
                 >
                     {/* Sidebar Header */}
-                    <div className="p-4 border-b border-slate-100 flex items-center gap-2">
+                    <div className="p-4 flex items-center gap-2">
                         <span className="text-xl">⚖️</span>
-                        <span className="font-bold text-slate-800">NyayaSetu Chats</span>
+                        <span className="font-bold">NyayaSetu Chats</span>
                     </div>
 
                     {/* New Chat Button */}
                     <div className="p-3">
                         <button 
                             onClick={handleNewChat}
-                            className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl flex items-center justify-center gap-2.5 transition-all shadow-md hover:shadow-indigo-500/20 active:scale-[0.98] cursor-pointer"
+                            className="w-full py-2.5 px-4 bg-transparent border border-white/20 hover:bg-[#343541] text-white text-sm rounded-md flex items-center gap-2.5 transition-colors cursor-pointer"
                         >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                             </svg>
-                            New Chat
+                            New chat
                         </button>
                     </div>
 
                     {/* Find Nearby Legal Help Button inside Sidebar */}
-                    <div className="px-3 pb-3 border-b border-slate-100">
+                    <div className="px-3 pb-3">
                         <button 
                             onClick={handleFindNearbyClick}
-                            className="w-full py-2.5 px-4 bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-blue-600 font-semibold rounded-xl flex items-center justify-center gap-2 border border-slate-200 transition-all shadow-sm active:scale-[0.98] cursor-pointer text-xs"
+                            className="w-full py-2 px-4 bg-transparent border border-white/20 hover:bg-[#343541] text-white text-xs rounded-md flex items-center gap-2 transition-colors cursor-pointer"
                         >
                             <span>📍</span>
-                            Find Nearby Legal Help
+                            Nearby Legal Help
                         </button>
                     </div>
 
                     {/* Search Bar */}
-                    <div className="px-3 py-2 border-b border-slate-100">
+                    <div className="px-3 py-2">
                         <div className="relative">
-                            <span className="absolute inset-y-0 left-3 flex items-center text-slate-400">
+                            <span className="absolute inset-y-0 left-3 flex items-center text-white/50">
                                 🔍
                             </span>
                             <input 
                                 type="text"
-                                className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                placeholder="Search conversations..."
+                                className="w-full bg-[#343541] border border-transparent rounded-md pl-9 pr-3 py-1.5 text-xs text-white placeholder-white/50 focus:outline-none focus:border-white/20"
+                                placeholder="Search..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
@@ -439,19 +508,21 @@ const AILegalHelpPage = () => {
                                 <div 
                                     key={session._id}
                                     onClick={() => handleSelectSession(session._id)}
-                                    className={`relative group flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 ${
+                                    className={`relative group flex items-center justify-between p-3 rounded-md cursor-pointer transition-all duration-200 ${
                                         currentSessionId === session._id 
-                                            ? 'bg-blue-50/80 text-blue-700 font-semibold shadow-sm' 
-                                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                                            ? 'bg-[#343541] text-white font-semibold' 
+                                            : 'text-white/80 hover:bg-[#2A2B32] hover:text-white'
                                     }`}
                                 >
                                     <div className="flex items-center gap-2.5 overflow-hidden w-full pr-7">
-                                        <span className="text-sm shrink-0">💬</span>
+                                        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                                        </svg>
                                         <span className="truncate text-xs tracking-wide">{session.title}</span>
                                     </div>
                                     <button 
                                         onClick={(e) => handleDeleteSession(e, session._id)}
-                                        className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                        className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 text-white/50 hover:text-white transition-all"
                                         title="Delete Chat"
                                     >
                                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -465,10 +536,10 @@ const AILegalHelpPage = () => {
                 </aside>
 
                 {/* Right Chat Area */}
-                <main className="flex-1 flex flex-col h-full bg-slate-50/30 relative overflow-hidden">
+                <main className="flex-1 flex flex-col h-full bg-white relative overflow-hidden">
                     
                     {/* Header */}
-                    <div className="h-16 border-b border-slate-200 flex items-center px-4 md:px-6 justify-between bg-white shrink-0 z-10 shadow-sm">
+                    <div className="h-14 flex items-center px-4 justify-between bg-white shrink-0 z-10 text-slate-600">
                         <div className="flex items-center gap-3 min-w-0">
                             <button 
                                 onClick={() => setIsSidebarOpen(prev => !prev)}
@@ -555,33 +626,49 @@ const AILegalHelpPage = () => {
                                     </div>
                                 )}
 
+                                {/* ChatGPT Style Messages */}
                                 {messages.map((msg, index) => (
                                     <div 
                                         key={index} 
-                                        className={`flex gap-3 md:gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
+                                        className="w-full flex justify-center py-6 border-b border-black/10"
                                     >
-                                        {/* Avatar */}
-                                        <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 shadow-sm ${
-                                            msg.role === 'user' 
-                                                ? 'bg-gradient-to-tr from-blue-500 to-indigo-500 text-white' 
-                                                : 'bg-indigo-50 text-indigo-600 border border-slate-100'
-                                        }`}>
-                                            {msg.role === 'user' ? '👤' : '⚖️'}
-                                        </div>
-
-                                        {/* Bubble Wrapper */}
-                                        <div className={`flex flex-col max-w-[82%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                                            
-                                            {/* Bubble Box */}
-                                            <div className={`p-4 rounded-2xl shadow-sm transition-all border ${
+                                        <div className="w-full max-w-3xl flex gap-4 px-4 md:px-0">
+                                            {/* Avatar */}
+                                            <div className={`w-8 h-8 rounded-sm flex items-center justify-center shrink-0 shadow-sm ${
                                                 msg.role === 'user' 
-                                                    ? 'bg-blue-600 text-white rounded-tr-none border-blue-500/10' 
-                                                    : 'bg-white text-slate-800 rounded-tl-none border-slate-100 leading-relaxed'
+                                                    ? 'bg-emerald-600 text-white' 
+                                                    : 'bg-[#10a37f] text-white'
                                             }`}>
+                                                {msg.role === 'user' ? 'U' : '⚖️'}
+                                            </div>
+
+                                            {/* Message Content */}
+                                            <div className="flex flex-col flex-1 min-w-0">
                                                 {msg.role === 'user' ? (
-                                                    <p className="whitespace-pre-wrap text-sm">{msg.content}</p>
+                                                    <p className="whitespace-pre-wrap text-sm text-slate-800 pt-1">{msg.content}</p>
                                                 ) : (
-                                                    <div className="markdown-content text-sm space-y-2">
+                                                    <div className="markdown-content text-sm space-y-2 text-slate-800 pt-1">
+                                                        
+                                                        {/* Metadata Badges (Category & Severity) */}
+                                                        {(msg.category || msg.severity) && (
+                                                            <div className="flex flex-wrap gap-2 mb-3 mt-1 border-b border-slate-100 pb-2">
+                                                                {msg.category && (
+                                                                    <span className="px-2.5 py-0.5 bg-blue-50 text-blue-700 rounded-md text-[10px] font-bold border border-blue-100 uppercase tracking-wider">
+                                                                        ⚖️ {msg.category}
+                                                                    </span>
+                                                                )}
+                                                                {msg.severity && (
+                                                                    <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider ${
+                                                                        msg.severity === 'High Priority' ? 'bg-red-50 text-red-700 border-red-200' :
+                                                                        msg.severity === 'Medium Priority' ? 'bg-orange-50 text-orange-700 border-orange-200' :
+                                                                        'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                                                    }`}>
+                                                                        {msg.severity === 'High Priority' ? '🔴 ' : msg.severity === 'Medium Priority' ? '🟠 ' : '🟢 '}
+                                                                        {msg.severity}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        )}
                                                         
                                                         {/* Emergency Card Display */}
                                                         {msg.emergency && msg.emergency.isEmergency && (
@@ -694,6 +781,31 @@ const AILegalHelpPage = () => {
                                                             </div>
                                                         )}
                                                         
+                                                        {/* Suggested Actions Display */}
+                                                        {msg.suggestedActions && msg.suggestedActions.length > 0 && (
+                                                            <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap gap-2">
+                                                                {msg.suggestedActions.map((action, i) => (
+                                                                    <button
+                                                                        key={i}
+                                                                        onClick={() => {
+                                                                            if (action.toLowerCase().includes('connect lawyer') || action.toLowerCase().includes('talk to a lawyer')) {
+                                                                                navigate('/dashboard/connect-lawyer');
+                                                                            }
+                                                                        }}
+                                                                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer
+                                                                            ${action.toLowerCase().includes('connect lawyer') 
+                                                                                ? 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md'
+                                                                                : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                                                                            }
+                                                                        `}
+                                                                    >
+                                                                        {action.toLowerCase().includes('connect lawyer') ? '👨‍⚖️ ' : '👉 '}
+                                                                        {action}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                        
                                                         {/* Strategy and Action Bar */}
                                                         {msg.queryId && (
                                                             <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-[10px] text-slate-400">
@@ -743,32 +855,6 @@ const AILegalHelpPage = () => {
                                                     </div>
                                                 )}
                                             </div>
-                                            {/* Copy Button */}
-                                            <div className={`mt-1.5 flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                                <button 
-                                                    onClick={() => handleCopy(msg.content, index)}
-                                                    className="opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 transition-opacity duration-200 px-2.5 py-0.5 rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-slate-600 transition-all flex items-center gap-1.5 text-[10px] cursor-pointer focus:ring-2 focus:ring-blue-500 focus:outline-none relative"
-                                                    aria-label={msg.role === 'user' ? 'Copy question' : 'Copy answer'}
-                                                    title={msg.role === 'user' ? 'Copy question' : 'Copy answer'}
-                                                >
-                                                    {copiedMessageIndex === index ? (
-                                                        <>
-                                                            <svg className="w-3.5 h-3.5 text-green-500 animate-in zoom-in duration-200" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                                                            </svg>
-                                                            <span className="text-green-600 font-medium">Copied</span>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                                                            </svg>
-                                                            <span>Copy</span>
-                                                        </>
-                                                    )}
-                                                </button>
-                                            </div>
                                         </div>
                                     </div>
                                 ))}
@@ -809,67 +895,82 @@ const AILegalHelpPage = () => {
                                         </svg>
                                     </button>
                                     <VoiceInput 
-                                        sessionId={currentSessionId}
-                                        history={messages.slice(1)}
                                         language={selectedLanguage}
-                                        onUploadStart={() => setIsLoading(true)}
-                                        onUploadSuccess={(transcription, aiResponse, selectedStrategy, caseId, returnedSessionId, laws, emergency) => {
-                                            setIsLoading(false);
+                                        onTranscriptionStart={() => setIsLoading(true)}
+                                        onTranscriptionComplete={async (transcription) => {
                                             setIsVoicePanelOpen(false); // Auto close voice panel on success
-                                            setMessages(prev => [
-                                                ...prev, 
-                                                { role: 'user', content: transcription },
-                                                { 
-                                                    role: 'ai', 
-                                                    content: aiResponse,
-                                                    queryId: caseId,
-                                                    strategy: selectedStrategy,
-                                                    feedback: 'none',
-                                                    laws: laws || [],
-                                                    emergency: emergency
-                                                }
-                                            ]);
+                                            setMessages(prev => [...prev, { role: 'user', content: transcription }]);
                                             
-                                            // Handle setting sessionId for new chat session
-                                            if (!currentSessionId && returnedSessionId) {
-                                                setCurrentSessionId(returnedSessionId);
+                                            try {
+                                                const data = await askLegalQuestion({ 
+                                                    question: transcription,
+                                                    history: messages.slice(1),
+                                                    sessionId: currentSessionId,
+                                                    language: selectedLanguage
+                                                });
+                                                
+                                                const responseObj = data.response || data.guidance || data.answer;
+                                                const replyText = typeof responseObj === 'object' && responseObj !== null ? responseObj.reply : responseObj;
+                                                
+                                                setMessages(prev => [...prev, { 
+                                                    role: 'ai', 
+                                                    content: replyText || "I couldn't process that request.",
+                                                    queryId: data.case?._id,
+                                                    strategy: data.selectedStrategy,
+                                                    feedback: 'none',
+                                                    laws: data.laws || [],
+                                                    emergency: data.emergency,
+                                                    severity: typeof responseObj === 'object' && responseObj !== null ? responseObj.severity : "General Guidance",
+                                                    category: typeof responseObj === 'object' && responseObj !== null ? responseObj.category : "Other",
+                                                    suggestedActions: typeof responseObj === 'object' && responseObj !== null ? (responseObj.suggestedActions || []) : []
+                                                }]);
+                                                
+                                                if (!currentSessionId && data.sessionId) {
+                                                    setCurrentSessionId(data.sessionId);
+                                                }
+                                                // Reload sessions list
+                                                const sessionsData = await getChatSessions();
+                                                setSessions(sessionsData.sessions || []);
+                                            } catch (error) {
+                                                console.error("Failed to get legal help via voice:", error);
+                                                const errorMessage = error.response?.data?.error || "Sorry, I encountered an error while connecting to the AI service. Please try again.";
+                                                setMessages(prev => [...prev, { role: 'ai', content: errorMessage }]);
+                                            } finally {
+                                                setIsLoading(false);
                                             }
-                                            // Reload sessions list
-                                            loadSessions();
                                         }}
-                                        onUploadError={() => setIsLoading(false)}
                                     />
                                 </div>
                             )}
 
-                            {/* POPULAR LEGAL QUESTIONS SUGGESTION BAR */}
-                            <div className="mb-2.5">
-                                <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block mb-1 px-1">
-                                    💡 Popular Legal Questions
-                                </span>
-                                <div className="flex gap-2 overflow-x-auto pb-1.5 scrollbar-thin whitespace-nowrap">
-                                    {POPULAR_QUESTIONS.map((q, idx) => (
-                                        <button
-                                            key={idx}
-                                            onClick={() => setInput(q.text)}
-                                            className="px-3.5 py-1.5 rounded-full bg-white hover:bg-blue-50 border border-slate-200 text-slate-700 text-xs font-medium hover:text-blue-600 hover:border-blue-300 transition-all shadow-sm active:scale-95 cursor-pointer flex items-center gap-1.5"
-                                        >
-                                            <span>{q.icon}</span>
-                                            <span>{q.label}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
                             {/* Text & Action Control Container */}
-                            <div className="bg-white border border-slate-200 rounded-2xl shadow-lg transition-all focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500/80 p-2 pr-3 flex items-end gap-2.5">
+                            <div className="bg-white border border-slate-300 rounded-[1.5rem] shadow-[0_0_15px_rgba(0,0,0,0.05)] transition-all focus-within:shadow-[0_0_20px_rgba(0,0,0,0.08)] p-2 pr-3 flex items-end gap-2.5">
                                 
+                                {/* File Upload Button */}
+                                <input 
+                                    type="file" 
+                                    ref={fileInputRef} 
+                                    onChange={handleFileUpload} 
+                                    className="hidden" 
+                                    accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" 
+                                />
+                                <button
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="w-9 h-9 flex items-center justify-center bg-transparent text-slate-400 hover:text-slate-600 rounded-full transition-all cursor-pointer mb-0.5 shrink-0"
+                                    title="Upload Document"
+                                    disabled={isLoading || isChatLoading}
+                                >
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path fillRule="evenodd" clipRule="evenodd" d="M9 7C9 4.23858 11.2386 2 14 2C16.7614 2 19 4.23858 19 7V15C19 18.866 15.866 22 12 22C8.13401 22 5 18.866 5 15V9C5 8.44772 5.44772 8 6 8C6.55228 8 7 8.44772 7 9V15C7 17.7614 9.23858 20 12 20C14.7614 20 17 17.7614 17 15V7C17 5.34315 15.6569 4 14 4C12.3431 4 11 5.34315 11 7V15C11 15.5523 11.4477 16 12 16C12.5523 16 13 15.5523 13 15V9C13 8.44772 13.4477 8 14 8C14.5523 8 15 8.44772 15 9V15C15 16.6569 13.6569 18 12 18C10.3431 18 9 16.6569 9 15V7Z" fill="currentColor"/>
+                                    </svg>
+                                </button>
+
                                 {/* Auto-growing Text Input */}
                                 <textarea 
                                     ref={textareaRef}
                                     rows="1"
-                                    className="flex-1 bg-transparent border-0 px-3 py-2 focus:outline-none resize-none text-sm text-slate-800 placeholder-slate-400 min-h-[38px] max-h-[140px] overflow-y-auto leading-relaxed"
-                                    placeholder="Type your legal query here... (Enter to send)"
+                                    className="flex-1 bg-transparent border-0 px-1 py-2 focus:outline-none resize-none text-base text-slate-800 placeholder-slate-500 min-h-[40px] max-h-[200px] overflow-y-auto leading-relaxed"
+                                    placeholder="Message NyayaSetu..."
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
                                     onKeyDown={handleKeyDown}
@@ -879,10 +980,10 @@ const AILegalHelpPage = () => {
                                 {/* Voice Input Toggle Button */}
                                 <button
                                     onClick={() => setIsVoicePanelOpen(prev => !prev)}
-                                    className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all cursor-pointer mb-0.5 shrink-0 active:scale-95 border ${
+                                    className={`w-9 h-9 flex items-center justify-center rounded-full transition-all cursor-pointer mb-0.5 shrink-0 ${
                                         isVoicePanelOpen 
-                                            ? 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100/50' 
-                                            : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                                            ? 'bg-red-50 text-red-500' 
+                                            : 'bg-transparent text-slate-400 hover:text-slate-600'
                                     }`}
                                     title="Voice Input"
                                 >
@@ -895,11 +996,13 @@ const AILegalHelpPage = () => {
                                 <button 
                                     onClick={handleSend}
                                     disabled={isLoading || isChatLoading || !input.trim()}
-                                    className="w-10 h-10 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all shadow-md hover:shadow-blue-500/20 active:scale-95 disabled:opacity-30 disabled:pointer-events-none disabled:shadow-none cursor-pointer shrink-0 mb-0.5"
+                                    className={`w-9 h-9 flex items-center justify-center rounded-full transition-all cursor-pointer shrink-0 mb-0.5 ${
+                                        input.trim() ? 'bg-black text-white hover:bg-black/80' : 'bg-[#e5e5e5] text-white disabled:pointer-events-none'
+                                    }`}
                                     title="Send Message"
                                 >
-                                    <svg className="w-4.5 h-4.5 fill-current rotate-90" viewBox="0 0 24 24">
-                                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                                    <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                                        <path d="M3.4 20.4l17.45-7.66c.81-.36.81-1.51 0-1.86L3.4 3.21c-.51-.23-1.07.12-1.07.69v5.41c0 .5.37.93.87 1l10.96 1.4-10.96 1.4c-.5.07-.87.5-.87 1v5.41c0 .57.56.92 1.07.69z" />
                                     </svg>
                                 </button>
                             </div>

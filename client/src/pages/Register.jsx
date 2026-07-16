@@ -67,8 +67,9 @@ const Register = () => {
                         </button>
                     </div>
                 </form>
-                <div className="text-center">
+                <div className="text-center space-y-2">
                     <p className="text-sm text-gray-600">Already have an account? <Link to="/login" className="text-blue-600 hover:underline">Login here</Link></p>
+                    <p className="text-sm text-gray-600">Are you a legal professional? <Link to="/register-lawyer" className="text-blue-600 hover:underline">Register as a Lawyer</Link></p>
                 </div>
             </div>
         </div>

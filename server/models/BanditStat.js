@@ -9,7 +9,7 @@ const banditStatSchema = new mongoose.Schema({
     armName: { 
         type: String, 
         required: true,
-        enum: ['RAG', 'GeminiLLM', 'LegalTemplate', 'SimilarCase']
+        enum: ['RAG', 'StrictRAG', 'GeminiLLM', 'LegalTemplate', 'SimilarCase']
     },
     totalSelections: { 
         type: Number, 

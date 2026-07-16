@@ -20,6 +20,7 @@ app.use(helmet());
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/uploads', express.static(require('path').join(__dirname, 'uploads')));
 
 // Health Check Route
 app.get('/health', (req, res) => {
@@ -39,6 +40,9 @@ const legalRoutes = require('./routes/legal');
 const documentsRoutes = require('./routes/documents');
 const banditRoutes = require('./routes/bandit');
 const historyRoutes = require('./routes/history');
+const lawyersRoutes = require('./routes/lawyers');
+const appointmentsRoutes = require('./routes/appointments');
+const chatRoutes = require('./routes/chat');
 
 // Use Routes
 app.use('/api/auth', authRoutes);
@@ -47,11 +51,54 @@ app.use('/api/documents', documentsRoutes);
 app.use('/api/voice', voiceRoutes);
 app.use('/api/translate', translateRoutes);
 app.use('/api/history', historyRoutes);
+app.use('/api/lawyers', lawyersRoutes);
+app.use('/api/appointments', appointmentsRoutes);
+app.use('/api/chat', chatRoutes);
 app.use('/api', banditRoutes);
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+// Socket.io integration
+const http = require('http');
+const { Server } = require('socket.io');
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
+    }
+});
+
+// Basic Socket.io handler
+io.on('connection', (socket) => {
+    console.log(`[Socket] User connected: ${socket.id}`);
+    
+    socket.on('join_appointment', (appointmentId) => {
+        socket.join(appointmentId);
+        console.log(`[Socket] User joined room: ${appointmentId}`);
+    });
+
+    socket.on('send_message', (data) => {
+        // data should contain { appointmentId, senderId, content, etc. }
+        // Broadcast to everyone else in the room
+        socket.to(data.appointmentId).emit('receive_message', data);
+        
+        // Also save to DB in background
+        const Message = require('./models/Message');
+        Message.create({
+            appointmentId: data.appointmentId,
+            senderId: data.senderId,
+            receiverId: data.receiverId,
+            content: data.content
+        }).catch(err => console.error('[Socket DB Error]', err));
+    });
+
+    socket.on('disconnect', () => {
+        console.log(`[Socket] User disconnected: ${socket.id}`);
+    });
+});
+
+server.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
 });
 

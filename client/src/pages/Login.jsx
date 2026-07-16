@@ -55,8 +55,9 @@ const Login = () => {
                         Login
                     </button>
                 </form>
-                <div className="mt-4 text-center">
+                <div className="mt-4 text-center space-y-2">
                     <p className="text-sm text-gray-600">Don't have an account? <Link to="/register" className="text-blue-600 hover:underline">Register here</Link></p>
+                    <p className="text-sm text-gray-600">Are you a legal professional? <Link to="/register-lawyer" className="text-blue-600 hover:underline">Register as a Lawyer</Link></p>
                 </div>
             </div>
         </div>

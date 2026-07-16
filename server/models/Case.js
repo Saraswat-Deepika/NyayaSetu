@@ -18,7 +18,7 @@ const caseSchema = new mongoose.Schema({
     language: { type: String },
     selectedStrategy: { 
         type: String, 
-        enum: ['RAG', 'GeminiLLM', 'LegalTemplate', 'SimilarCase', 'None'], 
+        enum: ['RAG', 'StrictRAG', 'GeminiLLM', 'LegalTemplate', 'SimilarCase', 'None'], 
         default: 'None' 
     },
     feedbackStatus: { 

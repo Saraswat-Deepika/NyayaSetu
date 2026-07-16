@@ -5,7 +5,10 @@ export const AppContext = createContext();
 export const useAppContext = () => useContext(AppContext);
 
 export const AppProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
+    const [user, setUser] = useState(() => {
+        const savedUser = localStorage.getItem('user');
+        return savedUser ? JSON.parse(savedUser) : null;
+    });
     const [token, setToken] = useState(localStorage.getItem('token') || null);
     const [preferredLanguage, setPreferredLanguage] = useState('English');
 
@@ -14,9 +17,14 @@ export const AppProvider = ({ children }) => {
             localStorage.setItem('token', token);
         } else {
             localStorage.removeItem('token');
-            setUser(null);
         }
-    }, [token]);
+        
+        if (user) {
+            localStorage.setItem('user', JSON.stringify(user));
+        } else {
+            localStorage.removeItem('user');
+        }
+    }, [token, user]);
 
     const login = (userData, jwtToken) => {
         setUser(userData);

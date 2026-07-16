@@ -98,8 +98,18 @@ If this is a product defect or warranty issue, you might have rights under the C
             return res.status(201).json({
                 success: true,
                 answer: nonLegalMessage,
-                guidance: nonLegalMessage,
-                response: nonLegalMessage,
+                guidance: {
+                    reply: nonLegalMessage,
+                    severity: "General Guidance",
+                    category: "Other",
+                    suggestedActions: []
+                },
+                response: {
+                    reply: nonLegalMessage,
+                    severity: "General Guidance",
+                    category: "Other",
+                    suggestedActions: []
+                },
                 selectedStrategy: 'None',
                 confidenceScore: 1.0,
                 case: null,
@@ -112,33 +122,45 @@ If this is a product defect or warranty issue, you might have rights under the C
 
         category = classifiedCategory;
 
+        let dbHistory = history || [];
+        let chatSession = null;
+
+        if (req.user && sessionId) {
+            chatSession = await ChatSession.findOne({ _id: sessionId, userId: req.user._id });
+            if (chatSession && chatSession.messages) {
+                dbHistory = chatSession.messages.map(m => ({ role: m.role, content: m.content }));
+            }
+        }
+
         try {
-            // 2. Select the optimal strategy (arm) using UCB1
-            const strategyResult = await banditService.getBestStrategy(category);
-            selectedStrategy = strategyResult.selectedArm;
-            confidenceScore = strategyResult.confidence;
-
-            // 3. Increment selection count
-            await banditService.incrementSelection(category, selectedStrategy);
-
-            // 4. Generate answer and match laws in parallel to reduce sequential API roundtrips
-            const [generatedGuidance, matchedLawsResult] = await Promise.all([
-                banditService.generateAnswerByStrategy(selectedStrategy, userQuery, category, history, language),
-                matchLaws(userQuery, language || 'English')
-            ]);
-            guidance = generatedGuidance;
-            matchedLaws = matchedLawsResult;
-        } catch (banditErr) {
-            console.error("⚠️ Bandit answer selection failed. Falling back to direct LLM:", banditErr.message);
-            selectedStrategy = 'GeminiLLM';
+            // 2. Strict RAG Architecture: Bypass bandit and standalone LLMs.
+            selectedStrategy = 'StrictRAG';
+            confidenceScore = 1.0;
             
-            // Fallback generation and laws matching in parallel!
-            const [fallbackGuidance, matchedLawsResult] = await Promise.all([
-                getLegalGuidance(userQuery, history, language),
+            const ragService = require('../services/ragService');
+            // Fetch relevant docs using multi-query expansion
+            const docs = await ragService.searchRelevantDocs(userQuery, null, true);
+            
+            // Generate strict guidance using only RAG context
+            const { getStrictRagGuidance } = require('../services/groqService');
+            
+            // Run RAG generation and laws matching in parallel to save latency
+            const [generatedGuidance, matchedLawsResult] = await Promise.all([
+                getStrictRagGuidance(userQuery, docs, language || 'English', dbHistory),
                 matchLaws(userQuery, language || 'English')
             ]);
-            guidance = fallbackGuidance;
+            
+            guidance = generatedGuidance; // This is now a JSON object { reply, severity, category, suggestedActions }
             matchedLaws = matchedLawsResult;
+        } catch (err) {
+            console.error("⚠️ Strict RAG Generation failed:", err.message);
+            guidance = {
+                reply: "An error occurred while retrieving legal information. Please try again.",
+                severity: "General Guidance",
+                category: "Other",
+                suggestedActions: []
+            };
+            matchedLaws = [];
         }
 
         // Save response to Case model if user is logged in
@@ -146,10 +168,10 @@ If this is a product defect or warranty issue, you might have rights under the C
         if (req.user) {
             newCase = new Case({
                 userId: req.user._id,
-                title: title || `${category} Query`,
+                title: title || `${guidance.category || category} Query`,
                 description: userQuery,
-                category: category,
-                aiSummary: guidance,
+                category: guidance.category || category,
+                aiSummary: typeof guidance === 'string' ? guidance : guidance.reply,
                 language: language || 'english',
                 selectedStrategy: selectedStrategy,
                 feedbackStatus: 'none'
@@ -158,28 +180,23 @@ If this is a product defect or warranty issue, you might have rights under the C
         }
 
         // Save messages in ChatSession if user is logged in
-        let chatSession = null;
         if (req.user) {
-            if (sessionId) {
-                // Find existing chat session
-                chatSession = await ChatSession.findOne({ _id: sessionId, userId: req.user._id });
-            }
+            const aiMessage = {
+                role: 'ai',
+                content: typeof guidance === 'string' ? guidance : guidance.reply,
+                queryId: newCase?._id,
+                strategy: selectedStrategy,
+                feedback: 'none',
+                laws: matchedLaws,
+                emergency: emergencyResult,
+                severity: guidance.severity || "General Guidance",
+                suggestedActions: guidance.suggestedActions || []
+            };
 
             if (chatSession) {
                 // Append to existing chat session
-                chatSession.messages.push({
-                    role: 'user',
-                    content: userQuery
-                });
-                chatSession.messages.push({
-                    role: 'ai',
-                    content: guidance,
-                    queryId: newCase?._id,
-                    strategy: selectedStrategy,
-                    feedback: 'none',
-                    laws: matchedLaws,
-                    emergency: emergencyResult
-                });
+                chatSession.messages.push({ role: 'user', content: userQuery });
+                chatSession.messages.push(aiMessage);
                 // Force mongoose to recognize the update to messages array
                 chatSession.markModified('messages');
                 await chatSession.save();
@@ -194,15 +211,7 @@ If this is a product defect or warranty issue, you might have rights under the C
                     title: chatTitle,
                     messages: [
                         { role: 'user', content: userQuery },
-                        {
-                            role: 'ai',
-                            content: guidance,
-                            queryId: newCase?._id,
-                            strategy: selectedStrategy,
-                            feedback: 'none',
-                            laws: matchedLaws,
-                            emergency: emergencyResult
-                        }
+                        aiMessage
                     ]
                 });
                 await chatSession.save();

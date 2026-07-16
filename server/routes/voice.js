@@ -1,10 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { handleVoiceUpload } = require('../controllers/voiceController');
+const { transcribeAudioOnly, processVoiceQuery, getVoiceHistory, deleteVoiceHistory } = require('../controllers/voiceController');
 const { protect } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
-// POST /transcribe using voiceController, use uploadMiddleware for audio file, protect with authMiddleware
-router.post('/transcribe', protect, upload.single('audio'), handleVoiceUpload);
+router.post('/start', protect, (req, res) => res.json({ success: true, message: 'Voice session started' }));
+router.post('/transcribe', protect, upload.single('audio'), transcribeAudioOnly);
+router.post('/process', protect, processVoiceQuery);
+router.get('/history', protect, getVoiceHistory);
+router.delete('/history/:id', protect, deleteVoiceHistory);
 
 module.exports = router;

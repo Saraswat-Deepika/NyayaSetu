@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const Law = require('../models/Law');
 const LegalFacility = require('../models/LegalFacility');
+const Lawyer = require('../models/Lawyer');
+const User = require('../models/User');
 
 const sampleLaws = [
     {
@@ -354,6 +356,44 @@ const seedDB = async () => {
         } else {
             console.log('ℹ️ Legal Facilities collection already populated.');
         }
+
+        const lawyersCount = await Lawyer.countDocuments({});
+        if (lawyersCount === 0) {
+            const mockLawyers = [
+                { name: 'Adv. Ramesh Sharma', email: 'ramesh@lawyer.com', spec: ['Property Law', 'Family Law'], exp: 12, fee: 1500, city: 'Delhi' },
+                { name: 'Adv. Sneha Gupta', email: 'sneha@lawyer.com', spec: ['Criminal Law', 'Cyber Law'], exp: 8, fee: 2000, city: 'Mumbai' },
+                { name: 'Adv. Vikram Singh', email: 'vikram@lawyer.com', spec: ['Corporate Law', 'Employment Law'], exp: 15, fee: 3000, city: 'Bangalore' }
+            ];
+
+            for (let l of mockLawyers) {
+                let user = await User.findOne({ email: l.email });
+                if (!user) {
+                    user = await User.create({ name: l.name, email: l.email, password: 'password123', role: 'lawyer' });
+                }
+                
+                const existingLawyer = await Lawyer.findOne({ userId: user._id });
+                if (!existingLawyer) {
+                    await Lawyer.create({
+                        userId: user._id,
+                        isVerified: true,
+                        specialization: l.spec,
+                        experienceYears: l.exp,
+                        consultationFee: l.fee,
+                        city: l.city,
+                        about: `Experienced advocate dealing in ${l.spec.join(', ')} with over ${l.exp} years of practice.`,
+                        languages: ['English', 'Hindi'],
+                        availableTimeSlots: [
+                            { day: 'Monday', startTime: '10:00 AM', endTime: '02:00 PM' },
+                            { day: 'Wednesday', startTime: '02:00 PM', endTime: '06:00 PM' }
+                        ]
+                    });
+                }
+            }
+            console.log('✅ Lawyers seeded successfully.');
+        } else {
+            console.log('ℹ️ Lawyers collection already populated.');
+        }
+
     } catch (error) {
         console.error('❌ Error seeding database:', error);
     }

@@ -14,7 +14,7 @@ const queryFeedbackSchema = new mongoose.Schema({
     strategy: { 
         type: String, 
         required: true,
-        enum: ['RAG', 'GeminiLLM', 'LegalTemplate', 'SimilarCase']
+        enum: ['RAG', 'StrictRAG', 'GeminiLLM', 'LegalTemplate', 'SimilarCase']
     },
     feedback: { 
         type: String, 

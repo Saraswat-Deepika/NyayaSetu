@@ -19,15 +19,33 @@ print("✅ Model loaded")
 def load_documents(folder="legal_documents"):
     documents = []
     for filename in os.listdir(folder):
-        if filename.endswith(".txt") or filename.endswith(".pdf"):
-            filepath = os.path.join(folder, filename)
-            print(f"  📄 Loading {filename}...")
+        filepath = os.path.join(folder, filename)
+        if filename.endswith(".txt"):
+            print(f"  📄 Loading Text {filename}...")
             with open(filepath, "r", encoding="utf-8") as f:
                 text = f.read()
             documents.append({
                 "filename": filename,
                 "text": text
             })
+        elif filename.endswith(".json"):
+            print(f"  📄 Loading JSON {filename}...")
+            with open(filepath, "r", encoding="utf-8") as f:
+                try:
+                    data = json.load(f)
+                    if isinstance(data, list):
+                        for item in data:
+                            documents.append({
+                                "filename": item.get("file_name", filename),
+                                "text": item.get("text", "")
+                            })
+                    else:
+                        documents.append({
+                            "filename": data.get("file_name", filename),
+                            "text": data.get("text", "")
+                        })
+                except json.JSONDecodeError as e:
+                    print(f"  ⚠️ Error parsing {filename}: {e}")
     return documents
 
 # ─────────────────────────────────────────

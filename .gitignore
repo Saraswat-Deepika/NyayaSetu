@@ -1,18 +1,43 @@
-node_modules
+# Dependencies
+node_modules/
+venv/
+__pycache__/
+
+# Environment variables
 .env
-__pycache__
-venv
-uploads
-.DS_Store
+
+# Build folders
 dist/
 build/
+
+# OS files
+.DS_Store
+
+# Uploads
+uploads/
+
+# Dataset folders
 Judgements/
 python-service/legal_documents/
+
+# Vector databases and indexes
 server/faiss_store/
-# Large binary/data files
-*.traineddata
+server/vector_store/
+python-service/faiss_index/
+
+# FAISS / Vector files
+*.faiss
+*.index
+*.pkl
+*.bin
+*.db
+*.sqlite
+
+# Large datasets
 python-service/IndicLegalQA_Dataset_10K_Revised.json
-python-service/faiss_index/*.pkl
-python-service/faiss_index/*.index
+*.jsonl
+
+# Temporary files
 objects.txt
 verify.txt
+*.log

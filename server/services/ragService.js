@@ -138,40 +138,104 @@ const indexDocument = async (text, documentId) => {
 const rewriteQuery = async (query) => {
     try {
         const groqService = require('./groqService');
-        const prompt = `You are a helpful query translation assistant. Your task is to rewrite the user's conversational input into a search query suitable for semantic vector retrieval.
-Remove all conversational greetings, filler, and non-essential words (e.g. "hello", "please help me", "how can I", "my name is", "helo", "hi").
-Translate informal phrasing to standard legal/factual query concepts. For example:
-- "my sister is lost" -> "missing person report FIR registration search procedure"
-- "sister is missing" -> "missing person police complaint legal procedure"
-- "daughter disappeared" -> "missing person kidnapping abduction minor"
-- "cannot be found" -> "missing person complaint"
+        const prompt = `You are a helpful query translation assistant. Your task is to rewrite the user's conversational input into search queries suitable for semantic vector retrieval.
+Remove all conversational greetings and non-essential words.
+Generate exactly 4 semantic variations of the query to maximize document retrieval.
+For example, if the query is "My landlord is not returning my deposit", variations could be:
+1. "landlord tenant dispute"
+2. "rent agreement"
+3. "security deposit refund"
+4. "tenancy rights"
 
 Input: "${query}"
 
-Return ONLY the rewritten, space-separated keywords or simple factual phrase to use as a search query. Do not include any explanation, conversational filler, or intro text.`;
+Output ONLY a raw JSON array of 4 strings. No markdown formatting, no conversational text.
+Example: ["query 1", "query 2", "query 3", "query 4"]`;
 
-        const rewritten = await groqService.generateChatCompletion(prompt);
-        console.log(`🔍 Query Expansion: "${query}" -> "${rewritten.trim()}"`);
-        return rewritten.trim();
+        const rewritten = await groqService.generateChatCompletion(prompt, null, true);
+        
+        let parsed;
+        try {
+            // Strip markdown block if model added it
+            const jsonText = rewritten.replace(/```json/g, '').replace(/```/g, '').trim();
+            parsed = JSON.parse(jsonText);
+        } catch (e) {
+            parsed = [query];
+        }
+
+        if (Array.isArray(parsed) && parsed.length > 0) {
+            console.log(`🔍 Multi-Query Expansion: "${query}" ->`, parsed);
+            return parsed;
+        }
+        return [query];
     } catch (err) {
         console.error("❌ Failed to rewrite query, using original:", err.message);
-        return query;
+        return [query];
     }
 };
 
 const searchRelevantDocs = async (query, documentId, rewrite = true) => {
     try {
+        // Step 1: Rewrite query if requested (returns array)
+        const searchQueries = rewrite ? await rewriteQuery(query) : [query];
+        
+        // Step 2: If it's a general query (no specific documentId), route to Python Global FAISS!
+        if (!documentId) {
+            console.log(`\n[RAG] Routing general legal query to Python Global FAISS for ${searchQueries.length} variations.`);
+            try {
+                let allResults = [];
+                for (const sq of searchQueries) {
+                    try {
+                        const response = await axios.post('http://127.0.0.1:8000/api/rag/search', { query: sq, k: 20 });
+                        if (response.data && response.data.success) {
+                            allResults.push(...response.data.results);
+                        }
+                    } catch (reqErr) {
+                         console.error(`[RAG] Error fetching for query "${sq}": ${reqErr.message}`);
+                    }
+                }
+                
+                // Deduplicate by text
+                const uniqueResults = [];
+                const seenText = new Set();
+                
+                for (const r of allResults) {
+                    if (!seenText.has(r.text)) {
+                        seenText.add(r.text);
+                        uniqueResults.push(r);
+                    }
+                }
+                
+                // Sort by distance (lower is better)
+                uniqueResults.sort((a, b) => a.score - b.score);
+                
+                // Take top 20 and filter by threshold 1.50
+                const validResults = uniqueResults.slice(0, 20).filter(r => r.score <= 1.50);
+                
+                console.log(`[RAG] Python FAISS returned ${uniqueResults.length} unique chunks. ${validResults.length} passed threshold.`);
+                
+                if (validResults.length > 0) {
+                    return validResults.map(r => ({ pageContent: r.text, source: r.source }));
+                } else {
+                    return []; // Strict RAG: don't fall back to local FAISS for general queries
+                }
+            } catch (pyErr) {
+                console.error("[RAG] Python FAISS error (Is python app.py running?):", pyErr.message);
+                return []; // Strict RAG: don't fall back to local FAISS
+            }
+        }
+        
+        // --- Code below is ONLY for specific documentId (user-uploaded PDFs) ---
+        
         if (!vectorStore) {
             return [];
         }
         
-        // Step 1: Rewrite query if requested
-        const searchQuery = rewrite ? await rewriteQuery(query) : query;
-        
         const filter = documentId ? (doc) => doc.metadata.documentId === documentId : undefined;
         
-        // Step 2: Retrieve Top-K (up to 8 chunks)
-        const resultsWithScore = await vectorStore.similaritySearchWithScore(searchQuery, 8, filter);
+        // Step 3: Retrieve Top-K from local Langchain FAISS (up to 8 chunks)
+        const fallbackQuery = searchQueries[0];
+        const resultsWithScore = await vectorStore.similaritySearchWithScore(fallbackQuery, 8, filter);
         
         // Step 3: Filter by a threshold of 1.20 (reasonably lenient to prevent false negatives)
         const THRESHOLD = 1.20;
@@ -180,7 +244,7 @@ const searchRelevantDocs = async (query, documentId, rewrite = true) => {
         // Step 4: Debug logging of retrieval pipeline details
         console.log(`\n================ RAG RETRIEVAL PIPELINE DEBUG ===============`);
         console.log(`📥 Original Query: "${query}"`);
-        console.log(`🔍 Expanded Search Query: "${searchQuery}"`);
+        console.log(`🔍 Fallback Search Query: "${fallbackQuery}"`);
         console.log(`📄 Total Chunks Retrieved: ${resultsWithScore.length}`);
         console.log(`🎯 Chunks Matching Threshold (<= ${THRESHOLD}): ${filteredResultsWithScore.length}`);
         console.log(`-------------------------------------------------------------`);

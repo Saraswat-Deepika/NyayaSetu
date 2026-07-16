@@ -1,234 +1,199 @@
+const fs = require('fs');
 const { transcribeAudio } = require('../services/whisperService');
 const banditService = require('../services/banditService');
-const Case = require('../models/Case');
-const ChatSession = require('../models/ChatSession');
 const { matchLaws } = require('../services/lawService');
 const { checkEmergency } = require('../services/emergencyService');
+const VoiceHistory = require('../models/VoiceHistory');
+const ChatSession = require('../models/ChatSession'); // Keeping for backward compatibility if needed
 
-const handleVoiceUpload = async (req, res) => {
+const transcribeAudioOnly = async (req, res) => {
+    let filePathToClean = null;
+    
     try {
+        console.log(`[voiceController] Received request to transcribe audio.`);
+        
         if (!req.file) {
-            return res.status(400).json({ error: 'No audio file uploaded' });
+            console.error('[voiceController] Validation Failed: No audio file uploaded');
+            return res.status(400).json({ success: false, error: 'No audio file uploaded', location: 'voiceController.js line 15' });
         }
 
-        let history = [];
-        if (req.body.history) {
-            try {
-                history = JSON.parse(req.body.history);
-            } catch (e) {
-                console.error("Failed to parse history from request body:", e);
-            }
+        filePathToClean = req.file.path;
+        console.log(`[voiceController] File received. Path: ${req.file.path}, Size: ${req.file.size} bytes, MimeType: ${req.file.mimetype}`);
+
+        // Validate file exists on disk
+        if (!fs.existsSync(req.file.path)) {
+            console.error('[voiceController] Validation Failed: Uploaded file does not exist on disk.');
+            return res.status(400).json({ success: false, error: 'Uploaded file does not exist on disk', location: 'voiceController.js line 22' });
+        }
+
+        // Validate file size (e.g. 50MB limit)
+        if (req.file.size > 50 * 1024 * 1024) {
+            console.error('[voiceController] Validation Failed: File size exceeds 50MB limit.');
+            return res.status(400).json({ success: false, error: 'File size exceeds limit', location: 'voiceController.js line 28' });
+        }
+        
+        // Supported extensions are handled by multer, but we can do a quick key check here
+        const geminiKey = process.env.GEMINI_API_KEY;
+        const openaiKey = process.env.OPENAI_API_KEY;
+        const groqKey = process.env.GROQ_API_KEY;
+        
+        if ((!geminiKey || geminiKey === 'dummy_key') && (!openaiKey || openaiKey === 'dummy_key') && (!groqKey || groqKey === 'dummy_key')) {
+             console.error('[voiceController] Validation Failed: No transcription API keys configured.');
+             return res.status(500).json({ success: false, error: 'Server configuration error: No transcription API keys are set.', location: 'voiceController.js line 38' });
         }
 
         const language = req.body.language || 'English';
-        const sessionId = req.body.sessionId;
+        console.log(`[voiceController] Calling transcribeAudio for language: ${language}`);
+        
+        const transcript = await transcribeAudio(req.file.path, language, req.file.mimetype);
 
-        // Call whisperService to transcribe
-        const transcript = await transcribeAudio(req.file.path, language);
+        console.log(`[voiceController] Transcription successful.`);
+        res.json({ success: true, text: transcript, transcript: transcript }); // return both text and transcript for frontend compatibility
+        
+    } catch (error) {
+        console.error("[voiceController] Transcription Error Caught:", error.message);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message || 'Server error during transcription',
+            location: error.location || 'voiceController.js catch block' 
+        });
+    } finally {
+        if (filePathToClean && fs.existsSync(filePathToClean)) {
+            try {
+                fs.unlinkSync(filePathToClean);
+                console.log(`[voiceController] Cleaned up temporary file: ${filePathToClean}`);
+            } catch (cleanupError) {
+                console.error(`[voiceController] Failed to clean up file ${filePathToClean}:`, cleanupError);
+            }
+        }
+    }
+};
 
-        // Check if the query is a legal query
+// 2. Process the text query using existing RAG pipeline
+const processVoiceQuery = async (req, res) => {
+    try {
+        const { transcript, language } = req.body;
+        
+        if (!transcript) {
+            return res.status(400).json({ error: 'Transcript is required' });
+        }
+
         const emergencyResult = checkEmergency(transcript);
         let matchedLaws = [];
+        let category = 'General Legal';
+        let legalResponse = '';
+        let confidenceScore = 0.8;
 
-        // 1. Run legal query check and classification concurrently to save latency
         const [legalCheck, classifiedCategory] = await Promise.all([
             banditService.isLegalQuery(transcript),
             banditService.classifyCategory(transcript)
         ]);
 
         if (!legalCheck) {
-            let nonLegalMessage = "";
+            legalResponse = `I am NyayaSetu, your AI Legal Assistant for Indian law. I can only assist with legal queries, citizen rights, or drafting legal documents.`;
+        } else {
+            category = classifiedCategory || 'Property Law';
+            let selectedStrategy = 'GeminiLLM';
+
             try {
-                const redirectSystemPrompt = `You are NyayaSetu, an AI Legal Assistant for India.
-The user asked a non-legal, conversational, or off-topic question: "${transcript}".
-Provide a friendly response (1-3 sentences) in the language of the query. 
-Politely greet them if it is a greeting. If it is a technical, personal, or off-topic question, briefly address it or suggest how they can resolve it, and then politely remind them that you can help with legal queries (such as consumer complaints for defective products/warranties, police reports, tenant rights, etc.) and ask how you can assist them legally.`;
-                
-                const groqService = require('../services/groqService');
-                nonLegalMessage = await groqService.generateChatCompletion(redirectSystemPrompt);
+                const strategyResult = await banditService.getBestStrategy(category);
+                selectedStrategy = strategyResult.selectedArm;
+                confidenceScore = strategyResult.confidence === Infinity ? 0.95 : strategyResult.confidence;
+                await banditService.incrementSelection(category, selectedStrategy);
+
+                const [generatedResponse, lawsResult] = await Promise.all([
+                    banditService.generateAnswerByStrategy(selectedStrategy, transcript, category, [], language),
+                    matchLaws(transcript, language || 'English')
+                ]);
+                legalResponse = generatedResponse;
+                matchedLaws = lawsResult;
             } catch (err) {
-                console.error("Failed to generate custom non-legal redirect:", err);
-                nonLegalMessage = `I am NyayaSetu, your AI Legal Assistant for Indian law. I can only assist with legal queries, citizen rights, or drafting legal documents. 
-
-If this is a product defect or warranty issue, you might have rights under the Consumer Protection Act. Please let me know how I can assist you legally.`;
+                console.error("Bandit selection failed, fallback to direct generation:", err);
+                const { getLegalGuidance } = require('../services/groqService');
+                const [fallbackResponse, lawsResult] = await Promise.all([
+                    getLegalGuidance(transcript, [], language),
+                    matchLaws(transcript, language || 'English')
+                ]);
+                legalResponse = fallbackResponse;
+                matchedLaws = lawsResult;
             }
-
-            let chatSession = null;
-            if (req.user) {
-                if (sessionId) {
-                    chatSession = await ChatSession.findOne({ _id: sessionId, userId: req.user._id });
-                }
-
-                if (chatSession) {
-                    chatSession.messages.push({ role: 'user', content: transcript });
-                    chatSession.messages.push({
-                        role: 'ai',
-                        content: nonLegalMessage,
-                        queryId: null,
-                        strategy: 'None',
-                        feedback: 'none',
-                        laws: [],
-                        emergency: emergencyResult
-                    });
-                    chatSession.markModified('messages');
-                    await chatSession.save();
-                } else {
-                    const titleWords = transcript.split(/\s+/).slice(0, 6).join(' ');
-                    const chatTitle = titleWords.length < transcript.length ? `${titleWords}...` : titleWords;
-
-                    chatSession = new ChatSession({
-                        userId: req.user._id,
-                        title: chatTitle,
-                        messages: [
-                            { role: 'user', content: transcript },
-                            {
-                                role: 'ai',
-                                content: nonLegalMessage,
-                                queryId: null,
-                                strategy: 'None',
-                                feedback: 'none',
-                                laws: [],
-                                emergency: emergencyResult
-                            }
-                        ]
-                    });
-                    await chatSession.save();
-                }
-            }
-
-            return res.json({
-                transcription: transcript,
-                transcript: transcript,
-                legalResponse: nonLegalMessage,
-                selectedStrategy: 'None',
-                confidenceScore: 1.0,
-                case: null,
-                sessionId: chatSession ? chatSession._id : null,
-                chatSession: chatSession,
-                laws: [],
-                emergency: emergencyResult
-            });
         }
 
-        // Classify category and select strategy using banditService
-        let category = classifiedCategory || 'Property Law';
-        let selectedStrategy = 'GeminiLLM';
-        let confidenceScore = 0.8;
-        let legalResponse = '';
+        // Parse acts and sections
+        const acts = matchedLaws.map(l => l.name).filter(Boolean);
+        const sections = matchedLaws.map(l => l.section).filter(Boolean);
+        
+        const responseSummary = {
+            response: legalResponse,
+            acts: acts.length > 0 ? acts : ['No specific acts found'],
+            sections: sections.length > 0 ? sections : ['Consult a lawyer for details'],
+            nextSteps: [
+                'Review the provided acts and sections',
+                'Gather necessary documents',
+                'Consult with a legal professional if needed'
+            ],
+            confidenceScore,
+            citations: matchedLaws.map(l => l.title || l.actName).slice(0, 3)
+        };
 
-        try {
-            const strategyResult = await banditService.getBestStrategy(category);
-            selectedStrategy = strategyResult.selectedArm;
-            confidenceScore = strategyResult.confidence;
-
-            await banditService.incrementSelection(category, selectedStrategy);
-
-            // Generate answer and match laws in parallel to reduce sequential API roundtrips
-            const [generatedResponse, lawsResult] = await Promise.all([
-                banditService.generateAnswerByStrategy(selectedStrategy, transcript, category, history, language),
-                matchLaws(transcript, language || 'English')
-            ]);
-            legalResponse = generatedResponse;
-            matchedLaws = lawsResult;
-        } catch (banditErr) {
-            console.error("⚠️ Voice Bandit selection failed. Falling back to direct LLM:", banditErr.message);
-            const { getLegalGuidance } = require('../services/groqService');
-            selectedStrategy = 'GeminiLLM';
-            
-            // Fallback generation and laws matching in parallel!
-            const [fallbackResponse, lawsResult] = await Promise.all([
-                getLegalGuidance(transcript, history, language),
-                matchLaws(transcript, language || 'English')
-            ]);
-            legalResponse = fallbackResponse;
-            matchedLaws = lawsResult;
-        }
-
-        // Save to Case model
-        let newCase = null;
+        // Create VoiceHistory record
+        let newHistory = null;
         if (req.user) {
-            newCase = new Case({
+            newHistory = await VoiceHistory.create({
                 userId: req.user._id,
-                title: `Voice: ${category}`,
-                description: transcript,
-                category: category,
-                aiSummary: legalResponse,
-                language: language || 'english',
-                selectedStrategy: selectedStrategy,
-                feedbackStatus: 'none'
+                language: language || 'English',
+                transcript,
+                responseSummary,
+                status: 'Processed'
             });
-            await newCase.save();
         }
 
-        // Save messages in ChatSession if user is logged in
-        let chatSession = null;
-        if (req.user) {
-            if (sessionId) {
-                // Find existing chat session
-                chatSession = await ChatSession.findOne({ _id: sessionId, userId: req.user._id });
-            }
-
-            if (chatSession) {
-                // Append to existing chat session
-                chatSession.messages.push({
-                    role: 'user',
-                    content: transcript
-                });
-                chatSession.messages.push({
-                    role: 'ai',
-                    content: legalResponse,
-                    queryId: newCase?._id,
-                    strategy: selectedStrategy,
-                    feedback: 'none',
-                    laws: matchedLaws,
-                    emergency: emergencyResult
-                });
-                chatSession.markModified('messages');
-                await chatSession.save();
-            } else {
-                // Auto-generate title from the first 6 words of the transcript
-                const titleWords = transcript.split(/\s+/).slice(0, 6).join(' ');
-                const chatTitle = titleWords.length < transcript.length ? `${titleWords}...` : titleWords;
-
-                // Create new chat session
-                chatSession = new ChatSession({
-                    userId: req.user._id,
-                    title: chatTitle,
-                    messages: [
-                        { role: 'user', content: transcript },
-                        {
-                            role: 'ai',
-                            content: legalResponse,
-                            queryId: newCase?._id,
-                            strategy: selectedStrategy,
-                            feedback: 'none',
-                            laws: matchedLaws,
-                            emergency: emergencyResult
-                        }
-                    ]
-                });
-                await chatSession.save();
-            }
-        }
-
-        // Return both transcript and legal response as JSON
         res.json({
-            transcription: transcript,
-            transcript: transcript, // backward compat
-            legalResponse: legalResponse,
-            selectedStrategy: selectedStrategy,
-            confidenceScore: confidenceScore === Infinity ? 0.95 : confidenceScore,
-            case: newCase,
-            sessionId: chatSession ? chatSession._id : null,
-            chatSession: chatSession,
+            success: true,
+            data: responseSummary,
+            history: newHistory,
             laws: matchedLaws,
             emergency: emergencyResult
         });
 
     } catch (error) {
-        console.error("Voice Controller Error:", error);
-        res.status(500).json({ error: 'Server error during voice processing' });
+        console.error("Processing Error:", error);
+        res.status(500).json({ error: 'Server error during processing' });
     }
 };
 
-module.exports = { handleVoiceUpload };
+// 3. Get User Voice History
+const getVoiceHistory = async (req, res) => {
+    try {
+        const history = await VoiceHistory.find({ userId: req.user._id }).sort({ createdAt: -1 });
+        res.json({ success: true, data: history });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch voice history' });
+    }
+};
+
+// 4. Delete Voice History
+const deleteVoiceHistory = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const historyItem = await VoiceHistory.findOne({ _id: id, userId: req.user._id });
+        
+        if (!historyItem) {
+            return res.status(404).json({ error: 'History not found' });
+        }
+
+        await VoiceHistory.deleteOne({ _id: id });
+        res.json({ success: true, message: 'Deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to delete voice history' });
+    }
+};
+
+// Keeping the original one exported for any backward compatibility (if some other page hits /voice/transcribe expecting full RAG)
+// But we will override the route inside voice.js
+module.exports = { 
+    transcribeAudioOnly, 
+    processVoiceQuery, 
+    getVoiceHistory, 
+    deleteVoiceHistory 
+};
