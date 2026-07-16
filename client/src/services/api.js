@@ -1,7 +1,13 @@
 import axios from 'axios';
 
+let rawBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// Ensure the base URL has /api at the end if it's missing
+if (rawBaseUrl && !rawBaseUrl.endsWith('/api')) {
+    rawBaseUrl = `${rawBaseUrl.replace(/\/$/, '')}/api`;
+}
+
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+    baseURL: rawBaseUrl,
 });
 
 // Add request interceptor to attach JWT token from localStorage
@@ -32,7 +38,7 @@ export const loginUser = async (credentials) => {
 
 export const askLegalQuestion = async (queryOrData, language) => {
     const token = localStorage.getItem('token');
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    const baseUrl = rawBaseUrl;
     
     let requestData;
     if (typeof queryOrData === 'object' && queryOrData !== null) {
