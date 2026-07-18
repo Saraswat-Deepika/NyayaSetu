@@ -142,6 +142,16 @@ const RegisterLawyer = () => {
 
     return (
         <div className="min-h-screen bg-slate-50 py-12 px-4">
+            <div className="max-w-4xl mx-auto mb-4">
+                <button 
+                    type="button"
+                    onClick={() => navigate('/dashboard')} 
+                    className="flex items-center gap-2 text-slate-600 hover:text-slate-900 font-medium transition-colors"
+                >
+                    <ArrowLeft className="w-5 h-5" />
+                    Back to Dashboard
+                </button>
+            </div>
             <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
                 <div className="mb-8 text-center">
                     <h2 className="text-3xl font-bold text-slate-800">Lawyer Registration</h2>

@@ -140,17 +140,15 @@ const rewriteQuery = async (query) => {
         const groqService = require('./groqService');
         const prompt = `You are a helpful query translation assistant. Your task is to rewrite the user's conversational input into search queries suitable for semantic vector retrieval.
 Remove all conversational greetings and non-essential words.
-Generate exactly 4 semantic variations of the query to maximize document retrieval.
+Generate exactly 2 semantic variations of the query to maximize document retrieval.
 For example, if the query is "My landlord is not returning my deposit", variations could be:
 1. "landlord tenant dispute"
-2. "rent agreement"
-3. "security deposit refund"
-4. "tenancy rights"
+2. "security deposit refund"
 
 Input: "${query}"
 
-Output ONLY a raw JSON array of 4 strings. No markdown formatting, no conversational text.
-Example: ["query 1", "query 2", "query 3", "query 4"]`;
+Output ONLY a raw JSON array of 2 strings. No markdown formatting, no conversational text.
+Example: ["query 1", "query 2"]`;
 
         const rewritten = await groqService.generateChatCompletion(prompt, null, true);
         
@@ -184,15 +182,22 @@ const searchRelevantDocs = async (query, documentId, rewrite = true) => {
             console.log(`\n[RAG] Routing general legal query to Python Global FAISS for ${searchQueries.length} variations.`);
             try {
                 let allResults = [];
-                for (const sq of searchQueries) {
+                // Run all 4 queries to the Python service in parallel instead of sequentially
+                const searchPromises = searchQueries.map(async (sq) => {
                     try {
                         const response = await axios.post('http://127.0.0.1:8000/api/rag/search', { query: sq, k: 20 });
                         if (response.data && response.data.success) {
-                            allResults.push(...response.data.results);
+                            return response.data.results;
                         }
                     } catch (reqErr) {
                          console.error(`[RAG] Error fetching for query "${sq}": ${reqErr.message}`);
                     }
+                    return [];
+                });
+                
+                const resultsArrays = await Promise.all(searchPromises);
+                for (const results of resultsArrays) {
+                    allResults.push(...results);
                 }
                 
                 // Deduplicate by text
