@@ -1,0 +1,109 @@
+.dashboard-container {
+    font-family: 'Inter', sans-serif;
+    background-color: #f8fafc;
+    min-height: 100vh;
+}
+
+.heading-font {
+    font-family: 'Outfit', sans-serif;
+}
+
+/* Welcome Banner Animated Gradient */
+.welcome-banner {
+    position: relative;
+    background: linear-gradient(-45deg, #2563eb, #4f46e5, #3b82f6, #6366f1);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+    overflow: hidden;
+}
+
+@keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.welcome-banner::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+    animation: rotateSlow 20s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes rotateSlow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Glassmorphism Action Cards */
+.action-card {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.action-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Specific glows based on card type */
+.action-card.voice:hover {
+    border-color: rgba(59, 130, 246, 0.4);
+    box-shadow: 0 20px 25px -5px rgba(59, 130, 246, 0.15);
+}
+.action-card.document:hover {
+    border-color: rgba(16, 185, 129, 0.4);
+    box-shadow: 0 20px 25px -5px rgba(16, 185, 129, 0.15);
+}
+.action-card.legal:hover {
+    border-color: rgba(139, 92, 246, 0.4);
+    box-shadow: 0 20px 25px -5px rgba(139, 92, 246, 0.15);
+}
+
+/* Staggered Animations */
+.animate-fade-in-up {
+    animation: fadeInUp 0.6s ease-out forwards;
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Icon hover effects */
+.icon-box {
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.action-card:hover .icon-box {
+    transform: scale(1.15) rotate(5deg);
+}
+
+/* Recent Documents row hover */
+.doc-row {
+    transition: all 0.2s ease;
+}
+
+.doc-row:hover {
+    background-color: #f1f5f9; /* Tailwind slate-100 */
+    border-radius: 0.75rem;
+    transform: translateX(6px);
+}

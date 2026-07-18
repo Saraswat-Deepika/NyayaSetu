@@ -13,6 +13,7 @@ import {
 import ReactMarkdown from 'react-markdown';
 import { useNavigate } from 'react-router-dom';
 import VoiceInput from '../components/VoiceInput';
+import './AILegalHelp.css';
 
 const SUPPORTED_LANGUAGES = [
     { code: 'English', label: 'English' },
@@ -404,7 +405,7 @@ const AILegalHelpPage = () => {
     );
 
     return (
-        <div className="h-[calc(100vh-4rem)] w-full">
+        <div className="legal-help-container h-[calc(100vh-4rem)] w-full">
             {/* Embedded styles for animations & custom classes */}
             <style>{`
                 @keyframes pulseDot {
@@ -427,7 +428,7 @@ const AILegalHelpPage = () => {
                 }
             `}</style>
 
-            <div className="flex h-full w-full overflow-hidden bg-white text-slate-800 transition-colors duration-300 relative">
+            <div className="flex h-full w-full overflow-hidden bg-transparent text-slate-800 transition-colors duration-300 relative">
                 
                 {/* Backdrop overlay for mobile drawer */}
                 {isSidebarOpen && (
@@ -437,9 +438,9 @@ const AILegalHelpPage = () => {
                     />
                 )}
 
-                {/* Left Collapsible Sidebar (ChatGPT Dark Style) */}
+                {/* Left Collapsible Sidebar */}
                 <aside 
-                    className={`fixed lg:relative inset-y-0 left-0 z-40 lg:z-10 flex flex-col h-full bg-[#202123] text-white border-r border-[#4d4d4f] transition-all duration-300 shrink-0 overflow-hidden ${
+                    className={`glass-panel fixed lg:relative inset-y-0 left-0 z-40 lg:z-10 flex flex-col h-full text-slate-800 transition-all duration-300 shrink-0 overflow-hidden ${
                         isSidebarOpen 
                             ? 'w-64 translate-x-0 opacity-100' 
                             : 'w-0 -translate-x-full opacity-0 pointer-events-none lg:w-0 lg:translate-x-0 lg:opacity-0'
@@ -455,9 +456,9 @@ const AILegalHelpPage = () => {
                     <div className="p-3">
                         <button 
                             onClick={handleNewChat}
-                            className="w-full py-2.5 px-4 bg-transparent border border-white/20 hover:bg-[#343541] text-white text-sm rounded-md flex items-center gap-2.5 transition-colors cursor-pointer"
+                            className="w-full py-2.5 px-4 bg-white/50 border border-slate-200 hover:bg-white text-slate-700 font-medium text-sm rounded-xl flex items-center gap-2.5 transition-all shadow-sm cursor-pointer"
                         >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                             </svg>
                             New chat
@@ -468,7 +469,7 @@ const AILegalHelpPage = () => {
                     <div className="px-3 pb-3">
                         <button 
                             onClick={handleFindNearbyClick}
-                            className="w-full py-2 px-4 bg-transparent border border-white/20 hover:bg-[#343541] text-white text-xs rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+                            className="w-full py-2 px-4 bg-transparent border border-slate-200 hover:bg-white text-slate-600 text-xs rounded-xl flex items-center gap-2 transition-all cursor-pointer"
                         >
                             <span>📍</span>
                             Nearby Legal Help
@@ -478,13 +479,13 @@ const AILegalHelpPage = () => {
                     {/* Search Bar */}
                     <div className="px-3 py-2">
                         <div className="relative">
-                            <span className="absolute inset-y-0 left-3 flex items-center text-white/50">
+                            <span className="absolute inset-y-0 left-3 flex items-center text-slate-400">
                                 🔍
                             </span>
                             <input 
                                 type="text"
-                                className="w-full bg-[#343541] border border-transparent rounded-md pl-9 pr-3 py-1.5 text-xs text-white placeholder-white/50 focus:outline-none focus:border-white/20"
-                                placeholder="Search..."
+                                className="w-full bg-white/50 border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:border-blue-300 focus:ring-1 focus:ring-blue-300 transition-all shadow-inner"
+                                placeholder="Search history..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
@@ -504,25 +505,26 @@ const AILegalHelpPage = () => {
                                 {searchQuery ? 'No matching chats found.' : 'No conversations yet.'}
                             </p>
                         ) : (
-                            filteredSessions.map((session) => (
+                            filteredSessions.map((session, i) => (
                                 <div 
                                     key={session._id}
                                     onClick={() => handleSelectSession(session._id)}
-                                    className={`relative group flex items-center justify-between p-3 rounded-md cursor-pointer transition-all duration-200 ${
+                                    className={`session-item-hover history-item-stagger relative group flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 border ${
                                         currentSessionId === session._id 
-                                            ? 'bg-[#343541] text-white font-semibold' 
-                                            : 'text-white/80 hover:bg-[#2A2B32] hover:text-white'
+                                            ? 'bg-white border-blue-200 text-blue-700 font-semibold shadow-sm' 
+                                            : 'border-transparent text-slate-600 hover:border-slate-200'
                                     }`}
+                                    style={{ animationDelay: `${i * 0.05}s` }}
                                 >
                                     <div className="flex items-center gap-2.5 overflow-hidden w-full pr-7">
-                                        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg className={`w-4 h-4 shrink-0 ${currentSessionId === session._id ? 'text-blue-500' : 'text-slate-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                                         </svg>
                                         <span className="truncate text-xs tracking-wide">{session.title}</span>
                                     </div>
                                     <button 
                                         onClick={(e) => handleDeleteSession(e, session._id)}
-                                        className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 text-white/50 hover:text-white transition-all"
+                                        className="absolute right-2 opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
                                         title="Delete Chat"
                                     >
                                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -536,10 +538,10 @@ const AILegalHelpPage = () => {
                 </aside>
 
                 {/* Right Chat Area */}
-                <main className="flex-1 flex flex-col h-full bg-white relative overflow-hidden">
+                <main className="glass-chat-area flex-1 flex flex-col h-full relative overflow-hidden">
                     
                     {/* Header */}
-                    <div className="h-14 flex items-center px-4 justify-between bg-white shrink-0 z-10 text-slate-600">
+                    <div className="h-14 flex items-center px-4 justify-between bg-transparent shrink-0 z-10 text-slate-800">
                         <div className="flex items-center gap-3 min-w-0">
                             <button 
                                 onClick={() => setIsSidebarOpen(prev => !prev)}
@@ -605,22 +607,22 @@ const AILegalHelpPage = () => {
                                             </p>
                                         </div>
 
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full pt-2">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full pt-2">
                                             <button 
                                                 onClick={handleFindNearbyClick}
-                                                className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50/50 hover:from-blue-100 hover:to-indigo-100/50 border border-blue-100 rounded-2xl flex flex-col items-center justify-center text-center transition-all cursor-pointer hover:shadow-sm active:scale-95 group"
+                                                className="welcome-card-hover p-5 bg-white/80 backdrop-blur-sm border border-slate-200 rounded-[20px] flex flex-col items-center justify-center text-center transition-all cursor-pointer group"
                                             >
-                                                <span className="text-2xl mb-1 group-hover:scale-110 transition-transform">📍</span>
-                                                <span className="text-xs font-bold text-slate-800">Find Nearby Help</span>
-                                                <span className="text-[10px] text-slate-500 mt-1">Locate Courts & Police Stations</span>
+                                                <span className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-2xl mb-3 group-hover:scale-110 transition-transform shadow-sm">📍</span>
+                                                <span className="text-sm font-bold text-slate-800">Find Nearby Help</span>
+                                                <span className="text-xs text-slate-500 mt-1">Courts & Police Stations</span>
                                             </button>
                                             <button 
                                                 onClick={() => setInput("What are the rights of a tenant under the rent control act?")}
-                                                className="p-4 bg-gradient-to-br from-slate-50 to-slate-100/50 hover:from-slate-100 hover:to-slate-200/50 border border-slate-200 rounded-2xl flex flex-col items-center justify-center text-center transition-all cursor-pointer hover:shadow-sm active:scale-95 group"
+                                                className="welcome-card-hover p-5 bg-white/80 backdrop-blur-sm border border-slate-200 rounded-[20px] flex flex-col items-center justify-center text-center transition-all cursor-pointer group"
                                             >
-                                                <span className="text-2xl mb-1 group-hover:scale-110 transition-transform">💡</span>
-                                                <span className="text-xs font-bold text-slate-800">Ask a Question</span>
-                                                <span className="text-[10px] text-slate-500 mt-1">Property, Consumer, Wages</span>
+                                                <span className="w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-2xl mb-3 group-hover:scale-110 transition-transform shadow-sm">💡</span>
+                                                <span className="text-sm font-bold text-slate-800">Ask a Question</span>
+                                                <span className="text-xs text-slate-500 mt-1">Property, Consumer, Wages</span>
                                             </button>
                                         </div>
                                     </div>
@@ -630,24 +632,24 @@ const AILegalHelpPage = () => {
                                 {messages.map((msg, index) => (
                                     <div 
                                         key={index} 
-                                        className="w-full flex justify-center py-6 border-b border-black/10"
+                                        className={`w-full flex justify-center py-4 ${msg.role === 'user' ? 'justify-end pr-4' : 'justify-start pl-4'}`}
                                     >
-                                        <div className="w-full max-w-3xl flex gap-4 px-4 md:px-0">
+                                        <div className={`w-full max-w-3xl flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                                             {/* Avatar */}
-                                            <div className={`w-8 h-8 rounded-sm flex items-center justify-center shrink-0 shadow-sm ${
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm transition-all ${
                                                 msg.role === 'user' 
-                                                    ? 'bg-emerald-600 text-white' 
-                                                    : 'bg-[#10a37f] text-white'
+                                                    ? 'bg-blue-100 text-blue-600' 
+                                                    : 'ai-core-idle'
                                             }`}>
-                                                {msg.role === 'user' ? 'U' : '⚖️'}
+                                                {msg.role === 'user' ? 'U' : <div className="w-2.5 h-2.5 bg-white rounded-full opacity-80" />}
                                             </div>
 
                                             {/* Message Content */}
-                                            <div className="flex flex-col flex-1 min-w-0">
+                                            <div className={`flex flex-col flex-1 min-w-0 p-5 animate-message-pop ${msg.role === 'user' ? 'msg-bubble-user user' : 'msg-bubble-ai ai'}`}>
                                                 {msg.role === 'user' ? (
-                                                    <p className="whitespace-pre-wrap text-sm text-slate-800 pt-1">{msg.content}</p>
+                                                    <p className="whitespace-pre-wrap text-sm pt-1 leading-relaxed">{msg.content}</p>
                                                 ) : (
-                                                    <div className="markdown-content text-sm space-y-2 text-slate-800 pt-1">
+                                                    <div className="markdown-content typewriter-reveal text-sm space-y-2 pt-1">
                                                         
                                                         {/* Metadata Badges (Category & Severity) */}
                                                         {(msg.category || msg.severity) && (
@@ -861,15 +863,16 @@ const AILegalHelpPage = () => {
                                 
                                 {/* Standard loading response indicator */}
                                 {isLoading && (
-                                    <div className="flex gap-4 items-start">
-                                        <div className="w-9 h-9 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 shadow-sm border border-slate-100">
-                                            ⚖️
-                                        </div>
-                                        <div className="bg-white border border-slate-100 p-4 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-1.5">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-600 pulse-dot" style={{ animationDelay: '0ms' }} />
-                                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-600 pulse-dot" style={{ animationDelay: '150ms' }} />
-                                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-600 pulse-dot" style={{ animationDelay: '300ms' }} />
-                                            <span className="text-xs text-slate-400 ml-2 select-none">Advisor is thinking...</span>
+                                    <div className="w-full flex justify-start pl-4 py-4">
+                                        <div className="w-full max-w-3xl flex gap-4 flex-row">
+                                            <div className="w-8 h-8 rounded-full ai-core-pulse flex items-center justify-center shrink-0 shadow-sm">
+                                                <div className="w-2.5 h-2.5 bg-white rounded-full opacity-80" />
+                                            </div>
+                                            <div className="msg-bubble-ai ai p-5 flex items-center gap-2">
+                                                <div className="w-2 h-2 rounded-full bg-slate-400 typing-dot" />
+                                                <div className="w-2 h-2 rounded-full bg-slate-400 typing-dot" />
+                                                <div className="w-2 h-2 rounded-full bg-slate-400 typing-dot" />
+                                            </div>
                                         </div>
                                     </div>
                                 )}
@@ -944,7 +947,7 @@ const AILegalHelpPage = () => {
                             )}
 
                             {/* Text & Action Control Container */}
-                            <div className="bg-white border border-slate-300 rounded-[1.5rem] shadow-[0_0_15px_rgba(0,0,0,0.05)] transition-all focus-within:shadow-[0_0_20px_rgba(0,0,0,0.08)] p-2 pr-3 flex items-end gap-2.5">
+                            <div className="glass-input-container rounded-[1.5rem] transition-all focus-within:shadow-[0_0_20px_rgba(59,130,246,0.15)] p-2 pr-3 flex items-end gap-2.5">
                                 
                                 {/* File Upload Button */}
                                 <input 
@@ -980,10 +983,10 @@ const AILegalHelpPage = () => {
                                 {/* Voice Input Toggle Button */}
                                 <button
                                     onClick={() => setIsVoicePanelOpen(prev => !prev)}
-                                    className={`w-9 h-9 flex items-center justify-center rounded-full transition-all cursor-pointer mb-0.5 shrink-0 ${
+                                    className={`bouncy-btn w-9 h-9 flex items-center justify-center rounded-full transition-all cursor-pointer mb-0.5 shrink-0 ${
                                         isVoicePanelOpen 
                                             ? 'bg-red-50 text-red-500' 
-                                            : 'bg-transparent text-slate-400 hover:text-slate-600'
+                                            : 'bg-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-50'
                                     }`}
                                     title="Voice Input"
                                 >
@@ -996,8 +999,8 @@ const AILegalHelpPage = () => {
                                 <button 
                                     onClick={handleSend}
                                     disabled={isLoading || isChatLoading || !input.trim()}
-                                    className={`w-9 h-9 flex items-center justify-center rounded-full transition-all cursor-pointer shrink-0 mb-0.5 ${
-                                        input.trim() ? 'bg-black text-white hover:bg-black/80' : 'bg-[#e5e5e5] text-white disabled:pointer-events-none'
+                                    className={`bouncy-btn w-9 h-9 flex items-center justify-center rounded-full transition-all cursor-pointer shrink-0 mb-0.5 ${
+                                        input.trim() ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md' : 'bg-slate-200 text-white disabled:pointer-events-none'
                                     }`}
                                     title="Send Message"
                                 >
